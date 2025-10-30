@@ -1,48 +1,50 @@
 # src/preprocess_data.py
 import os
 import cv2
-import shutil
 from tqdm import tqdm
+import shutil
+import re
 
-# CONFIG
+# ---------- CONFIG ----------
 RAW_DIR = "data/raw"
 OUT_DIR = "data/processed"
 TARGET_SIZE = (128, 128)     # resize images for training
-MAX_FRAMES_PER_VIDEO = 300   # set to int for quick tests, or None for all frames
-FALL_MARGIN = 0              # follow README exactly: use provided window
-SAVE_CROPPED = False         # per your request: do NOT crop, save full frame
+MAX_FRAMES_PER_VIDEO = 300   # set to an int for quick tests, or None for all frames
+FALL_MARGIN = 0              # margin around annotated window (set 0 since we follow README exactly)
+SAVE_CROPPED = False         # YOU REQUESTED: no cropping, save full frames
+# ----------------------------
 
-# Heuristic params for impact detection (Option C)
-VEL_PEAK_WINDOW = 3         # smoothing window when finding vertical velocity peak
-VEL_STABLE_THRESH = 2.0     # threshold (pixels/frame) for "stabilized" vertical movement
-HEIGHT_DROP_RATIO = 0.85    # heuristic: collapsed height <= this * pre-fall height
-
-# -------------------- helpers --------------------
 def ensure_dir(path):
     os.makedirs(path, exist_ok=True)
 
-def clear_dir(path):
-    """Remove everything inside a directory (not the directory itself)."""
+def clear_dir_of_images(path):
+    """Remove files (images) inside a directory. Keep subfolders if present."""
     if not os.path.isdir(path):
         return
-    for name in os.listdir(path):
-        full = os.path.join(path, name)
-        try:
-            if os.path.isfile(full) or os.path.islink(full):
-                os.unlink(full)
-            elif os.path.isdir(full):
-                shutil.rmtree(full)
-        except Exception as e:
-            print(f"[warn] Could not remove {full}: {e}")
+    for fname in os.listdir(path):
+        fpath = os.path.join(path, fname)
+        if os.path.isfile(fpath):
+            try:
+                os.remove(fpath)
+            except Exception:
+                pass
+        elif os.path.isdir(fpath):
+            # remove files inside subdir, but keep folder
+            for subf in os.listdir(fpath):
+                subfp = os.path.join(fpath, subf)
+                if os.path.isfile(subfp):
+                    try:
+                        os.remove(subfp)
+                    except Exception:
+                        pass
 
 def parse_annotation_file(txt_path):
     """
-    Parse annotation file following README:
-      - first numeric line = fall_start (frame index)
-      - second numeric line = fall_end (frame index)
-      - subsequent per-frame lines: frame_idx, flag?, height, width, center_x, center_y
-    Returns:
-      fall_start (int or None), fall_end (int or None), bbox_map: {frame_idx: {'bbox':(...),'h':..., 'w':..., 'cx':..., 'cy':...}}
+    STRICT parser following the README:
+      First non-empty line -> frame number of the beginning of the fall (fall_start)
+      Second non-empty line -> frame number of the end of the fall (fall_end)
+      Remaining lines -> per-frame info (frame_idx, label_flag, h, w, cx, cy)
+    Returns: (fall_start:int or None, fall_end:int or None, bbox_map:dict)
     """
     if not txt_path:
         return None, None, {}
@@ -57,10 +59,23 @@ def parse_annotation_file(txt_path):
     if not lines:
         return None, None, {}
 
-    # parse numeric tokens line-by-line
-    parsed_rows = []
-    for ln in lines:
-        parts = ln.replace(',', ' ').split()
+    # First two lines: fall_start, fall_end (some files may provide only start or only end — handle gracefully)
+    fall_start = None
+    fall_end = None
+    try:
+        if len(lines) >= 1:
+            fall_start = int(lines[0])
+        if len(lines) >= 2:
+            fall_end = int(lines[1])
+    except Exception:
+        # if parsing fails, fallback to None
+        fall_start = None
+        fall_end = None
+
+    # parse per-frame bbox entries, but we won't crop if SAVE_CROPPED=False.
+    bbox_map = {}
+    for ln in lines[2:]:
+        parts = re.split(r'[, \t]+', ln)
         nums = []
         for p in parts:
             try:
@@ -70,124 +85,54 @@ def parse_annotation_file(txt_path):
                     nums.append(int(p))
             except:
                 pass
-        if nums:
-            parsed_rows.append(nums)
-
-    # first two numeric lines are fall_start and fall_end per README
-    fall_start = None
-    fall_end = None
-    if len(parsed_rows) >= 2 and len(parsed_rows[0]) >= 1 and len(parsed_rows[1]) >= 1:
-        try:
-            fall_start = int(parsed_rows[0][0])
-            fall_end = int(parsed_rows[1][0])
-        except:
-            fall_start = None
-            fall_end = None
-
-    # build bbox_map from remaining rows (if available)
-    bbox_map = {}
-    for row in parsed_rows[2:]:
-        if len(row) >= 6:
+        if len(nums) >= 6:
+            frame_idx = int(nums[0])
+            # order: frame_idx, ???, h, w, cx, cy  (we saw files in this format). We'll use indices 2..5.
             try:
-                frame_idx = int(row[0])
-                h = float(row[2])
-                w = float(row[3])
-                cx = float(row[4])
-                cy = float(row[5])
+                h = float(nums[2]); w = float(nums[3]); cx = float(nums[4]); cy = float(nums[5])
             except:
                 continue
             if h > 0 and w > 0:
-                x1 = int(round(cx - w / 2.0))
-                y1 = int(round(cy - h / 2.0))
-                x2 = int(round(cx + w / 2.0))
-                y2 = int(round(cy + h / 2.0))
-                bbox_map[frame_idx] = {"bbox": (x1, y1, x2, y2), "h": h, "w": w, "cx": cx, "cy": cy}
+                x1 = int(round(cx - w/2)); y1 = int(round(cy - h/2))
+                x2 = int(round(cx + w/2)); y2 = int(round(cy + h/2))
+                bbox_map[frame_idx] = (x1, y1, x2, y2)
     return fall_start, fall_end, bbox_map
 
-def smooth(arr, k=3):
-    if k <= 1 or not arr:
-        return arr[:]
-    half = k // 2
-    n = len(arr)
-    out = []
-    for i in range(n):
-        l = max(0, i - half)
-        r = min(n, i + half + 1)
-        out.append(sum(arr[l:r]) / (r - l))
-    return out
-
-def detect_impact_frame_option_c(fall_start, fall_end, bbox_map):
+def process_video(video_path, annot_path, out_fall_dir, out_no_dir):
     """
-    Use bbox center vertical velocity + height heuristics to estimate impact frame inside annotated window.
-    Returns an integer frame index or None if not enough data (caller will fallback).
-    """
-    if fall_start is None or fall_end is None:
-        return None
-
-    seq = []
-    for f in range(fall_start, fall_end + 1):
-        if f in bbox_map:
-            e = bbox_map[f]
-            seq.append((f, e["cy"], e["h"]))
-    if len(seq) < 3:
-        return None
-
-    frames = [s[0] for s in seq]
-    cys = [s[1] for s in seq]
-    hs = [s[2] for s in seq]
-
-    vy = [cys[i] - cys[i - 1] for i in range(1, len(cys))]
-    if not vy:
-        return None
-    vy_s = smooth(vy, k=VEL_PEAK_WINDOW)
-
-    # peak downward speed (largest positive vy; y increases downward)
-    peak_idx = max(range(len(vy_s)), key=lambda i: vy_s[i])
-    # pre-peak height average
-    pre_idx = max(0, peak_idx - 1)
-    pre_heights = hs[:pre_idx + 1] if pre_idx >= 0 else hs
-    avg_pre_h = sum(pre_heights) / len(pre_heights) if pre_heights else hs[0]
-
-    stable_idx = None
-    for j in range(peak_idx + 1, len(vy_s)):
-        if abs(vy_s[j]) < VEL_STABLE_THRESH:
-            h_after = hs[j + 1] if (j + 1) < len(hs) else hs[-1]
-            if h_after <= avg_pre_h * HEIGHT_DROP_RATIO or abs(vy_s[j]) < (VEL_STABLE_THRESH / 2):
-                stable_idx = j + 1  # vy index offset -> frame index in seq
-                break
-
-    if stable_idx is not None:
-        return int(frames[stable_idx])
-    # fallback: choose the frame at peak (peak_idx+1 in frames because vy is offset)
-    fallback_idx = min(len(frames) - 1, peak_idx + 1)
-    return int(frames[fallback_idx])
-
-# -------------------- main processing --------------------
-def process_video(video_path, annot_path, out_dirs):
-    """
-    Process a single video and save frames to out_dirs: dict with keys 'fall','falling','no_fall'.
-    Follows README: frames inside [fall_start..fall_end] are considered fall-window; those are split
-    into 'falling' and 'fall' using impact detection; outside window -> no_fall.
-    Returns (n_fall, n_falling, n_no)
+    Process a single video:
+      - reads fall_start, fall_end from annotation file (README spec)
+      - reads frames with OpenCV
+      - labels frames as:
+          * "no_fall" if frame_idx < fall_start
+          * "fall" if fall_start <= frame_idx <= fall_end
+          * skip frames > fall_end
+      - crops disabled (full frames saved) because SAVE_CROPPED=False
+      - resizes to TARGET_SIZE and writes to out_fall_dir or out_no_dir
+    Returns: (saved_count_fall, saved_count_no)
     """
     cap = cv2.VideoCapture(video_path)
     if not cap.isOpened():
-        print("Failed to open video:", video_path)
-        return None
+        print(f"[error] Failed to open video: {video_path}")
+        return 0, 0
 
     total_frames = int(cap.get(cv2.CAP_PROP_FRAME_COUNT) or 0)
+
     fall_start, fall_end, bbox_map = parse_annotation_file(annot_path)
+
+    # Apply margin if configured (we set FALL_MARGIN=0 by default to follow README)
+    eff_start = None
+    eff_end = None
+    if fall_start is not None:
+        eff_start = max(1, int(fall_start - FALL_MARGIN))
+    if fall_end is not None:
+        eff_end = int(fall_end + FALL_MARGIN)
+
     basename = os.path.splitext(os.path.basename(video_path))[0]
-    saved = {"fall": 0, "falling": 0, "no_fall": 0}
-
-    impact_frame = None
-    if fall_start is not None and fall_end is not None:
-        impact_frame = detect_impact_frame_option_c(fall_start, fall_end, bbox_map)
-        if impact_frame is None:
-            # fallback to midpoint of annotated window
-            impact_frame = (fall_start + fall_end) // 2
-
+    saved_count_fall = 0
+    saved_count_no = 0
     frame_idx = 0
+
     pbar = tqdm(total=total_frames if total_frames > 0 else None,
                 desc=f"Processing {basename}", unit="frame")
 
@@ -195,38 +140,67 @@ def process_video(video_path, annot_path, out_dirs):
         ret, frame = cap.read()
         if not ret:
             break
-        frame_idx += 1  # annotation files appear 1-indexed
+        frame_idx += 1  # annotation frames are 1-indexed in these files
 
-        # Decide label
-        if fall_start is not None and fall_end is not None and (fall_start - FALL_MARGIN) <= frame_idx <= (fall_end + FALL_MARGIN):
-            # inside annotated fall window -> split based on impact_frame
-            if impact_frame is None:
-                # if no impact info, treat frames <= midpoint as falling, > midpoint as fall
-                mid = (fall_start + fall_end) // 2
-                label = "falling" if frame_idx < mid else "fall"
+        # Decide label using strict README logic:
+        # - before fall_start => no_fall
+        # - in [fall_start..fall_end] => fall
+        # - after fall_end => SKIP
+        label = None
+        if eff_start is not None and eff_end is not None:
+            if frame_idx < eff_start:
+                label = "no_fall"
+            elif eff_start <= frame_idx <= eff_end:
+                label = "fall"
             else:
-                if frame_idx < impact_frame:
-                    label = "falling"
-                else:
-                    label = "fall"
+                label = None  # skip frames after fall_end
+        elif fall_start is not None and fall_end is not None:
+            # fallback if margin vars not set
+            if frame_idx < fall_start:
+                label = "no_fall"
+            elif fall_start <= frame_idx <= fall_end:
+                label = "fall"
+            else:
+                label = None
         else:
+            # No annotation available: treat everything as no_fall (you can change this behavior later)
             label = "no_fall"
 
-        # resize full-frame and save (no cropping)
-        try:
-            resized = cv2.resize(frame, TARGET_SIZE)
-        except Exception as e:
-            print(f"Skipping frame {frame_idx} in {basename} due to resize error:", e)
+        # Skip frames where label is None (after fall_end)
+        if label is None:
             pbar.update(1)
             if MAX_FRAMES_PER_VIDEO and frame_idx >= MAX_FRAMES_PER_VIDEO:
                 break
             continue
 
-        out_dir = out_dirs[label]
-        fname = f"{basename}_frame{frame_idx:05d}.jpg"
-        out_path = os.path.join(out_dir, fname)
-        cv2.imwrite(out_path, resized)
-        saved[label] += 1
+        # NO CROPPING: we save full frame (user requested full images)
+        saved_frame = frame
+
+        # Resize (safe)
+        try:
+            resized = cv2.resize(saved_frame, TARGET_SIZE)
+        except Exception as e:
+            print(f"[warn] Skipping frame {frame_idx} in {basename} due to resize error: {e}")
+            pbar.update(1)
+            if MAX_FRAMES_PER_VIDEO and frame_idx >= MAX_FRAMES_PER_VIDEO:
+                break
+            continue
+
+        out_dir = out_fall_dir if label == "fall" else out_no_dir
+        filename = f"{basename}_frame{frame_idx:05d}.jpg"
+        out_path = os.path.join(out_dir, filename)
+        # write
+        try:
+            cv2.imwrite(out_path, resized)
+        except Exception as e:
+            print(f"[warn] Failed to write {out_path}: {e}")
+            pbar.update(1)
+            continue
+
+        if label == "fall":
+            saved_count_fall += 1
+        else:
+            saved_count_no += 1
 
         pbar.update(1)
 
@@ -235,53 +209,84 @@ def process_video(video_path, annot_path, out_dirs):
 
     pbar.close()
     cap.release()
-    return saved["fall"], saved["falling"], saved["no_fall"]
+    return saved_count_fall, saved_count_no
+
+
+def find_all_scenes(root_raw):
+    """
+    Discover scene directories in data/raw that contain nested duplicated folders,
+    and return a list of dataset roots to scan for Videos/Annotation_files.
+    This tries to follow the structure you described:
+      data/raw/<scene>/<scene>/Videos  (or sometimes just data/raw/<scene>/Videos)
+    """
+    scenes = []
+    if not os.path.isdir(root_raw):
+        return scenes
+    for d in sorted(os.listdir(root_raw)):
+        dpath = os.path.join(root_raw, d)
+        if not os.path.isdir(dpath):
+            continue
+        inner_list = os.listdir(dpath)
+        # If there's a subfolder with same name, use that as dataset_root
+        if d in inner_list and os.path.isdir(os.path.join(dpath, d)):
+            scenes.append(os.path.join(dpath, d))
+        else:
+            scenes.append(dpath)
+    return scenes
+
 
 def main():
-    # prepare output dirs
     ensure_dir(OUT_DIR)
-    out_fall = os.path.join(OUT_DIR, "fall")
-    out_falling = os.path.join(OUT_DIR, "falling")
-    out_no = os.path.join(OUT_DIR, "no_fall")
-    ensure_dir(out_fall); ensure_dir(out_falling); ensure_dir(out_no)
+    fall_out = os.path.join(OUT_DIR, "fall")
+    no_out = os.path.join(OUT_DIR, "no_fall")
+    falling_out = os.path.join(OUT_DIR, "falling")  # optional, kept for compatibility
+    ensure_dir(fall_out); ensure_dir(no_out); ensure_dir(falling_out)
 
-    # Clear old processed images BEFORE writing new ones (per your request)
-    print("[info] Clearing old processed images...")
-    clear_dir(out_fall)
-    clear_dir(out_falling)
-    clear_dir(out_no)
+    # CLEAR old processed images (user requested deletion before writing new ones)
+    clear_dir_of_images(fall_out)
+    clear_dir_of_images(no_out)
+    clear_dir_of_images(falling_out)
 
-    # iterate through scene folders under RAW_DIR
-    scenes = [d for d in os.listdir(RAW_DIR) if os.path.isdir(os.path.join(RAW_DIR, d))]
-    scenes = [s for s in scenes if any(x in s.lower() for x in ["coffee", "home", "lecture"])]
+    dataset_roots = find_all_scenes(RAW_DIR)
+    if not dataset_roots:
+        print(f"[error] No scene folders found under {RAW_DIR}. Check your dataset path.")
+        return
 
-    totals = {"fall": 0, "falling": 0, "no_fall": 0}
-    for scene in scenes:
-        scene_path = os.path.join(RAW_DIR, scene)
-        inner = os.listdir(scene_path)
-        if scene in inner:
-            dataset_root = os.path.join(scene_path, scene)
-        else:
-            dataset_root = scene_path
+    total_fall = 0
+    total_no = 0
 
+    for dataset_root in dataset_roots:
+        # expect Videos and Annotation_files inside dataset_root
         videos_dir = os.path.join(dataset_root, "Videos")
         ann_dir = os.path.join(dataset_root, "Annotation_files")
+
+        # If Videos folder doesn't exist, fallback to dataset_root itself
         if not os.path.isdir(videos_dir):
             videos_dir = dataset_root
 
-        video_files = sorted([f for f in os.listdir(videos_dir) if f.lower().endswith(('.avi', '.mp4'))])
-        print(f"\nScene {scene}: found {len(video_files)} videos (videos dir: {videos_dir})")
+        # gather video files
+        try:
+            video_files = sorted([f for f in os.listdir(videos_dir) if f.lower().endswith(('.avi', '.mp4'))])
+        except Exception as e:
+            print(f"[warn] Could not list videos in {videos_dir}: {e}")
+            video_files = []
+
+        print(f"\nScene {os.path.basename(dataset_root)}: found {len(video_files)} videos (videos dir: {videos_dir})")
 
         for vf in video_files:
             video_path = os.path.join(videos_dir, vf)
-            base = os.path.splitext(vf)[0]
+
+            # find matching annotation file by same base or numeric match
+            base = os.path.splitext(vf)[0]  # e.g. "video (1)"
             annot_candidates = []
             if os.path.isdir(ann_dir):
                 for a in os.listdir(ann_dir):
-                    if a.lower().startswith(base.lower()) and a.lower().endswith('.txt'):
-                        annot_candidates.append(os.path.join(ann_dir, a))
+                    if a.lower().endswith('.txt'):
+                        # direct start match
+                        if a.lower().startswith(base.lower()):
+                            annot_candidates.append(os.path.join(ann_dir, a))
+                # fallback: find by number anywhere in filename
                 if not annot_candidates:
-                    import re
                     m = re.search(r'\d+', base)
                     if m:
                         num = m.group(0)
@@ -290,21 +295,14 @@ def main():
                                 annot_candidates.append(os.path.join(ann_dir, a))
             annot_path = annot_candidates[0] if annot_candidates else None
 
-            out_dirs = {"fall": out_fall, "falling": out_falling, "no_fall": out_no}
-            saved = process_video(video_path, annot_path, out_dirs)
-            if saved is None:
-                sf = sfal = sn = 0
-            else:
-                sf, sfal, sn = saved
+            saved_f, saved_n = process_video(video_path, annot_path, fall_out, no_out)
+            total_fall += saved_f
+            total_no += saved_n
+            print(f" -> Saved {saved_f} fall frames and {saved_n} no_fall frames from {vf}")
 
-            totals["fall"] += sf
-            totals["falling"] += sfal
-            totals["no_fall"] += sn
-            print(f" -> Saved {sf} fall, {sfal} falling, {sn} no_fall from {vf}")
-
-    print("\nDone. Totals:", totals)
+    print("\nDone. Totals:", "fall:", total_fall, "no_fall:", total_no)
     print("Processed images are in:", OUT_DIR)
-    print("IMPORTANT: This script clears data/processed/* at start. If you want to add curated external fall images, put them in data/external/fall_images and copy them into data/processed/fall AFTER running this script.")
+
 
 if __name__ == "__main__":
     main()
