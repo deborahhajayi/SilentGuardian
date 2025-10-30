@@ -1,6 +1,6 @@
 # Ignore raw dataset files
-data/raw/
-
+data/ 
+dataset/
 # Ignore virtual environment folder
 venv/
 
