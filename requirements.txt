@@ -1,0 +1,29 @@
+# Core Python utilities
+numpy>=1.24.0
+pandas>=2.0.0
+tqdm>=4.66.0
+
+# Image and video processing
+opencv-python>=4.8.0
+opencv-python-headless>=4.8.0   # for headless environments (optional but useful)
+Pillow>=10.0.0
+matplotlib>=3.7.0
+
+# Machine learning / model preparation
+scikit-learn>=1.3.0
+tensorflow>=2.15.0
+torch>=2.2.0
+torchvision>=0.17.0
+
+# File handling and OS utils
+pathlib2>=2.3.7
+shutilwhich>=1.1.0
+
+# For reading annotation and bounding box data
+pyyaml>=6.0.1
+
+# Optional: visualization tools (useful when checking bounding boxes or frame samples)
+seaborn>=0.12.2
+
+# Optional: Jupyter if you want to experiment interactively
+jupyter>=1.0.0
