@@ -1,17 +1,17 @@
 # src/preprocess_data.py
 import os
 import cv2
-from tqdm import tqdm
-import shutil
 import re
+import shutil
+from tqdm import tqdm
 from datetime import datetime
 
 # ---------- CONFIG ----------
 RAW_DIR = "data/raw"
 OUT_DIR = "data/processed"
 TARGET_SIZE = (128, 128)     # resize images for training
-MAX_FRAMES_PER_VIDEO = 300   # set to an int for quick tests, or None for all frames
-FALL_MARGIN = 0              # margin around annotated window (set 0 since we follow README exactly)
+MAX_FRAMES_PER_VIDEO = None  # set to an int for quick tests, or None for all frames
+FALL_MARGIN = 0              # margin around annotated window (0 to follow README exactly)
 SAVE_CROPPED = False         # YOU REQUESTED: no cropping, save full frames
 SKIPPED_LOG = os.path.join(OUT_DIR, "skipped_videos.txt")
 # ----------------------------
@@ -44,7 +44,7 @@ def log_skipped(video_relpath, reason):
     """Append a human-readable line about skipped video to SKIPPED_LOG."""
     try:
         ensure_dir(os.path.dirname(SKIPPED_LOG))
-        with open(SKIPPED_LOG, "a") as fh:
+        with open(SKIPPED_LOG, "a", encoding="utf-8") as fh:
             ts = datetime.utcnow().isoformat()
             fh.write(f"{ts}\t{video_relpath}\t{reason}\n")
     except Exception as e:
@@ -57,21 +57,25 @@ def parse_annotation_file(txt_path):
     Strategy:
       - Read all non-empty lines.
       - Collect any lines that are standalone integers (single token that parses to int).
-      - If we find any *consecutive* standalone-int lines in file order where a>0 and b>=a,
+      - If we find any *consecutive* standalone-int lines in file order where a>=0 and b>=a,
         pick the first such pair as (fall_start, fall_end).
       - Otherwise, fallback to the classic behavior: if first two non-empty lines are ints use them.
-      - Also parse per-frame bbox lines into bbox_map (frame_idx -> (x1,y1,x2,y2)) for possible future use.
+      - Also parse per-frame bbox lines into bbox_map (frame_idx -> (x1,y1,x2,y2)) in case needed later.
+
     Returns:
       (fall_start:int or None, fall_end:int or None, bbox_map:dict)
     """
     if not txt_path:
         return None, None, {}
     if not os.path.exists(txt_path):
-        print(f"[warn] Annotation file not found: {txt_path}")
         return None, None, {}
 
-    with open(txt_path, 'r') as f:
-        raw_lines = [ln.rstrip("\n") for ln in f]
+    try:
+        with open(txt_path, 'r', encoding='utf-8', errors='ignore') as f:
+            raw_lines = [ln.rstrip("\n") for ln in f]
+    except Exception as e:
+        print(f"[warn] Could not read annotation {txt_path}: {e}")
+        return None, None, {}
 
     # strip empty lines but keep indexes for "consecutive" detection
     non_empty = []
@@ -96,42 +100,33 @@ def parse_annotation_file(txt_path):
     fall_start = None
     fall_end = None
     if len(standalone_ints) >= 2:
-        # standalone_ints entries are in the same order as non_empty; check adjacency
         for k in range(len(standalone_ints)-1):
             i1, orig1, v1 = standalone_ints[k]
             i2, orig2, v2 = standalone_ints[k+1]
             # adjacency in non_empty list -> consecutive non-empty lines in file
             if i2 == i1 + 1:
-                # sanity: positive frame numbers and reasonable ordering
-                if v1 > 0 and v2 >= v1:
+                # sanity: allow 0 (meaning "no fall") as valid, but prefer positive start when possible
+                if v1 >= 0 and v2 >= v1:
                     fall_start, fall_end = int(v1), int(v2)
                     break
 
     # If not found via consecutive standalone ints, try first two non-empty lines as ints (classic)
     if fall_start is None:
         try:
-            # attempt to parse the first two non-empty lines as ints
             first_ln = non_empty[0][1]
-            if len(non_empty) >= 2:
-                second_ln = non_empty[1][1]
-            else:
-                second_ln = None
+            second_ln = non_empty[1][1] if len(non_empty) >= 2 else None
 
-            if re.fullmatch(r'[+-]?\d+', first_ln):
-                a = int(first_ln)
-                if second_ln is not None and re.fullmatch(r'[+-]?\d+', second_ln):
-                    b = int(second_ln)
-                    if a > 0 and b >= a:
-                        fall_start, fall_end = a, b
+            if re.fullmatch(r'[+-]?\d+', first_ln) and second_ln is not None and re.fullmatch(r'[+-]?\d+', second_ln):
+                a = int(first_ln); b = int(second_ln)
+                if a >= 0 and b >= a:
+                    fall_start, fall_end = a, b
         except Exception:
             fall_start = None
             fall_end = None
 
     # Parse per-frame bbox entries (frame,label,h,w,cx,cy) when present
     bbox_map = {}
-    # We scan all non-empty lines and try to parse numeric tokens when line has >=6 numbers
     for _, ln in non_empty:
-        # split by comma or whitespace
         parts = re.split(r'[, \t]+', ln)
         nums = []
         for p in parts:
@@ -162,7 +157,7 @@ def process_video(video_path, annot_path, out_fall_dir, out_no_dir):
       - reads fall_start, fall_end from annotation file (flexibly found anywhere)
       - reads frames with OpenCV
       - labels frames as:
-          * "no_fall" if frame_idx < fall_start
+          * "no_fall" if frame_idx < fall_start (or if file marked 0 0 -> all frames no_fall)
           * "fall" if fall_start <= frame_idx <= fall_end
           * skip frames > fall_end
       - crops disabled (full frames saved) because SAVE_CROPPED=False
@@ -178,14 +173,17 @@ def process_video(video_path, annot_path, out_fall_dir, out_no_dir):
 
     fall_start, fall_end, bbox_map = parse_annotation_file(annot_path)
 
-    # If annotation file missing OR fall_start/fall_end not present -> skip whole video and log it
     rel_video = os.path.relpath(video_path)
+
+    # If annotation file missing -> skip & log
     if annot_path is None:
         reason = "no annotation file"
         print(f"[skip] {rel_video}: {reason}")
         log_skipped(rel_video, reason)
         cap.release()
         return 0, 0
+
+    # If parser didn't find start/end -> skip & log
     if fall_start is None or fall_end is None:
         reason = "annotation missing valid fall start/end"
         print(f"[skip] {rel_video}: {reason}")
@@ -193,9 +191,16 @@ def process_video(video_path, annot_path, out_fall_dir, out_no_dir):
         cap.release()
         return 0, 0
 
-    # Apply margin if configured
-    eff_start = max(1, int(fall_start - FALL_MARGIN))
-    eff_end = int(fall_end + FALL_MARGIN)
+    # If file explicitly says 0 0 -> means no fall occurred -> treat all frames as no_fall
+    explicit_no_fall = (fall_start == 0 and fall_end == 0)
+
+    # Apply margin (FALL_MARGIN default 0 to follow README)
+    if not explicit_no_fall:
+        eff_start = max(1, int(fall_start - FALL_MARGIN))
+        eff_end = int(fall_end + FALL_MARGIN)
+    else:
+        eff_start = None
+        eff_end = None
 
     basename = os.path.splitext(os.path.basename(video_path))[0]
     saved_count_fall = 0
@@ -211,16 +216,17 @@ def process_video(video_path, annot_path, out_fall_dir, out_no_dir):
             break
         frame_idx += 1  # annotation frames are 1-indexed in these files
 
-        # Decide label using strict README logic:
-        # - before fall_start => no_fall
-        # - in [fall_start..fall_end] => fall
-        # - after fall_end => SKIP
-        if frame_idx < eff_start:
+        # Choose label
+        if explicit_no_fall:
             label = "no_fall"
-        elif eff_start <= frame_idx <= eff_end:
-            label = "fall"
         else:
-            label = None  # skip frames after fall_end
+            # before fall_start => no_fall; in window => fall; after => skip
+            if frame_idx < eff_start:
+                label = "no_fall"
+            elif eff_start <= frame_idx <= eff_end:
+                label = "fall"
+            else:
+                label = None  # skip frames after fall_end
 
         # Skip frames where label is None (after fall_end)
         if label is None:
@@ -229,10 +235,10 @@ def process_video(video_path, annot_path, out_fall_dir, out_no_dir):
                 break
             continue
 
-        # NO CROPPING: we save full frame (user requested full images)
+        # NO CROPPING: save full frame
         saved_frame = frame
 
-        # Resize
+        # Resize (safe)
         try:
             resized = cv2.resize(saved_frame, TARGET_SIZE)
         except Exception as e:
@@ -289,17 +295,24 @@ def find_all_scenes(root_raw):
             scenes.append(dpath)
     return scenes
 
+def find_annotation_dir(dataset_root):
+    """Return annotation directory path if exists (support both names)."""
+    candidates = ["Annotation_files", "Annotations_files", "Annotation_files/.", "Annotations_files/."]
+    for cand in ["Annotation_files", "Annotations_files"]:
+        p = os.path.join(dataset_root, cand)
+        if os.path.isdir(p):
+            return p
+    return None
+
 def main():
     ensure_dir(OUT_DIR)
     fall_out = os.path.join(OUT_DIR, "fall")
     no_out = os.path.join(OUT_DIR, "no_fall")
-    falling_out = os.path.join(OUT_DIR, "falling")  # optional, kept for compatibility
-    ensure_dir(fall_out); ensure_dir(no_out); ensure_dir(falling_out)
+    ensure_dir(fall_out); ensure_dir(no_out)
 
     # CLEAR old processed images (user requested deletion before writing new ones)
     clear_dir_of_images(fall_out)
     clear_dir_of_images(no_out)
-    clear_dir_of_images(falling_out)
 
     # remove old skipped log to start fresh
     try:
@@ -315,11 +328,12 @@ def main():
 
     total_fall = 0
     total_no = 0
+    total_videos = 0
+    total_skipped = 0
 
     for dataset_root in dataset_roots:
-        # expect Videos and Annotation_files inside dataset_root
         videos_dir = os.path.join(dataset_root, "Videos")
-        ann_dir = os.path.join(dataset_root, "Annotation_files")
+        ann_dir = find_annotation_dir(dataset_root)
 
         # If Videos folder doesn't exist, fallback to dataset_root itself
         if not os.path.isdir(videos_dir):
@@ -335,12 +349,13 @@ def main():
         print(f"\nScene {os.path.basename(dataset_root)}: found {len(video_files)} videos (videos dir: {videos_dir})")
 
         for vf in video_files:
+            total_videos += 1
             video_path = os.path.join(videos_dir, vf)
 
             # find matching annotation file by same base or numeric match
             base = os.path.splitext(vf)[0]  # e.g. "video (1)"
             annot_candidates = []
-            if os.path.isdir(ann_dir):
+            if ann_dir and os.path.isdir(ann_dir):
                 for a in os.listdir(ann_dir):
                     if a.lower().endswith('.txt'):
                         # direct start match
@@ -356,14 +371,28 @@ def main():
                                 annot_candidates.append(os.path.join(ann_dir, a))
             annot_path = annot_candidates[0] if annot_candidates else None
 
-            # PROCESS OR SKIP based on flexible parsing
+            # PROCESS OR SKIP based on parsing & rules
             saved_f, saved_n = process_video(video_path, annot_path, fall_out, no_out)
+
+            # If video was skipped, the function already wrote to skipped log and returned 0,0.
+            if saved_f == 0 and saved_n == 0:
+                # determine whether it was really skipped (annotation missing or invalid)
+                if annot_path is None:
+                    total_skipped += 1
+                else:
+                    # Could be a very short video, or frames failed resize: we'll not count as skipped here.
+                    pass
+
             total_fall += saved_f
             total_no += saved_n
             print(f" -> Saved {saved_f} fall frames and {saved_n} no_fall frames from {vf}")
 
-    print("\nDone. Totals:", "fall:", total_fall, "no_fall:", total_no)
+    print("\nDone.")
+    print(f"Videos scanned: {total_videos}, skipped (logged): {total_skipped}")
+    print("Totals:", "fall:", total_fall, "no_fall:", total_no)
     print("Processed images are in:", OUT_DIR)
+    if os.path.exists(SKIPPED_LOG):
+        print("See skipped list:", SKIPPED_LOG)
 
 if __name__ == "__main__":
     main()
