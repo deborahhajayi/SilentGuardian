@@ -1,0 +1,43 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="utf-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1" />
+  <title>Sign Up</title>
+  <link rel="stylesheet" type="text/css" href="{{ url_for('static', filename='styles.css') }}">
+  <link rel="stylesheet" type="text/css" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.6.0/css/all.min.css">
+</head>
+<body>
+  <div class="split-container">
+
+    <!-- LEFT: image / logo area -->
+    <aside class="left-pane" role="img" aria-label="Decorative signup image">
+      <div class="left-content">
+        <img src="{{ url_for('static', filename='images/sgl3.png') }}" alt="Logo" class="pane-logo floating">
+        <h2 class="pane-heading">Create Account</h2>
+        <p class="pane-sub">Join us, it’s quick and easy!</p>
+      </div>
+    </aside>
+
+    
+    <!-- RIGHT: signup form -->
+    <main class="right-pane">
+      <div class="form-wrap">
+        <h1 class="form-title">SIGN UP</h1>
+
+        <form method="post" action="/add_user" class="signup-form">
+          <input type="text" placeholder="First Name" name="fname" class="input-field" required>
+          <input type="text" placeholder="Last Name" name="lname" class="input-field" required>
+          <input type="email" placeholder="Email" name="email" class="input-field" required>
+          <input type="password" placeholder="Password" name="password" class="input-field" required>
+
+          <button type="submit" class="primary-button createbutton">Create account</button>
+        </form>
+
+        <p class="login-info">Already have an account? <a href="/">Login here</a></p>
+      </div>
+    </main>
+
+  </div>
+</body>
+</html>

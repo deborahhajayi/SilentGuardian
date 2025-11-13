@@ -1,0 +1,52 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="utf-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1" />
+  <title>Login</title>
+  <link rel="stylesheet" type="text/css" href="{{ url_for('static', filename='styles.css') }}">
+</head>
+<body>
+  <div class="split-container">
+
+    <!-- LEFT: image / logo area -->
+    <aside class="left-pane" role="img" aria-label="Decorative login image">
+      <!-- If you want a centered circular logo, drop an <img> here; otherwise background-image in CSS is used -->
+      <div class="left-content">
+        <!-- Example logo image — place loginLogo.png in your static folder -->
+        <img src="{{ url_for('static', filename='images/sgl3.png') }}" alt="Silent Guardian" class="pane-logo floating">
+        
+        <h2 class="pane-heading">Welcome Back</h2>
+        <p class="pane-sub">Sign in to continue to your account</p>
+      </div>
+    </aside>
+
+    
+    <!-- RIGHT: login form -->
+    <main class="right-pane">
+      <div class="form-wrap">
+        <h1 class="form-title">LOGIN</h1>
+
+        <form method="post" action="/login_validation" class="login-form">
+          <input type="email" name="email" placeholder="Email" required>
+          <input type="password" name="password" placeholder="Password" required>
+
+          <div class="form-row">
+            <a class="forgot-link" href="/forgot_page">Forgot password?</a>
+
+            <label class="remember">
+              <input type="checkbox" name="remember" disabled>
+              <span>Remember me</span>
+            </label>
+          </div>
+
+          <button type="submit" class="primary-button loginbutton">LOGIN</button>
+        </form>
+
+        <p class="login-info">Don't have an account? <a href="/signUp">Register</a></p>
+      </div>
+    </main>
+
+  </div>
+</body>
+</html>

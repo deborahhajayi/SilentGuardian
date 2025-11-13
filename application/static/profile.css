@@ -1,0 +1,121 @@
+/* layout + background */
+body {
+  font-family: Arial, sans-serif;
+  background-color: white;
+  margin: 0;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+}
+
+/* header container centered with room for left icon */
+header {
+  position: relative;
+  width: 90%;
+  max-width: 700px;
+  margin-top: 30px;
+  display: flex;
+  align-items: center;
+  justify-content: center; /* centers the H1 */
+}
+
+/* Title centered in header */
+header h1 {
+  margin: 0;
+  font-size: 1.6rem;
+  color: #333;
+  text-align: center;
+  flex: 1;
+}
+
+/* home link placed on the left but inside the centered header */
+.home-link {
+  position: absolute;
+  left: 0;
+  top: 50%;
+  transform: translateY(-50%);
+  display: inline-flex;
+  align-items: center;
+  padding-left: 6px;
+  text-decoration: none;
+}
+
+/* SVG wrapper sizing (replaces IMG) */
+.home-icon {
+  width: 36px;
+  height: 36px;
+  display: inline-block;
+  border-radius: 6px;
+  overflow: hidden;
+  background: transparent; /* change if you want a colored pill behind icon */
+}
+
+/* ensure the inline SVG scales to the container */
+.home-svg {
+  width: 100%;
+  height: 100%;
+  display: block;
+  fill: #5c4578; /* change this hex to whatever color you want for the icon */
+}
+
+/* main card */
+main {
+  background-color: white;
+  padding: 30px;
+  border-radius: 15px;
+  margin-top: 20px;
+  box-shadow: 0 5px 15px rgba(0,0,0,0.1);
+  width: 90%;
+  max-width: 700px;
+  margin-left: auto;
+  margin-right: auto;
+}
+
+/* profile info styles */
+.profile-info p {
+  font-size: 1.1rem;
+  margin: 12px 0;
+  color: #444;
+  padding-left: 25%;
+  
+}
+
+
+
+/* logout button */
+.logout-btn {
+  margin-top: 24px;
+  text-align: center;
+
+}
+
+.logout-btn a {
+  display: inline-block;
+  padding: 10px 24px;
+  background-color: black;
+  color: white;
+  text-decoration: none;
+  font-weight: bold;
+  border-radius: 6px;
+}
+
+.logout-btn {
+  border: none;
+  padding: 10px 14px;
+  border-radius: 6px;
+  cursor: pointer;
+  font-size: 0.95rem;
+  transition: background-color 0.3s ease;
+}
+
+.logout-btn a:hover {
+  background-color: rgb(87, 87, 87);
+}
+
+/* small screens */
+@media (max-width: 480px) {
+  .home-icon { width: 32px; height: 32px; }
+  header { width: 95%; }
+  main { padding: 20px; }
+}
+

@@ -1,6 +1,10 @@
 # Ignore raw dataset files
 data/ 
 dataset/
+
+#Ignore node modules,not using them currently but just in case
+node_modules/
+
 # Ignore virtual environment folder
 venv/
 

@@ -1,0 +1,31 @@
+{
+  "name": "silentguardian",
+  "version": "1.0.0",
+  "description": "SilentGurdian is a simple, smart safety system that quietly looks out for the people you care about most. Using AI, it can recognize when someone has fallen or when they make a hand gesture asking for help.",
+  "main": "index.js",
+  "scripts": {
+    "test": "echo \"Error: no test specified\" && exit 1"
+  },
+  "repository": {
+    "type": "git",
+    "url": "git+https://github.com/deborahhajayi/SilentGuardian.git"
+  },
+  "keywords": [],
+  "author": "",
+  "license": "ISC",
+  "bugs": {
+    "url": "https://github.com/deborahhajayi/SilentGuardian/issues"
+  },
+  "homepage": "https://github.com/deborahhajayi/SilentGuardian#readme",
+  "dependencies": {
+    "bcryptjs": "^3.0.3",
+    "cors": "^2.8.5",
+    "dotenv": "^17.2.3",
+    "express": "^5.1.0",
+    "express-session": "^1.18.2",
+    "sqlite3": "^5.1.7"
+  },
+  "devDependencies": {
+    "nodemon": "^3.1.11"
+  }
+}

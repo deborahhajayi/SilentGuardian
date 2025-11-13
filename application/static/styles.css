@@ -1,0 +1,412 @@
+/*
+
+html, body {
+  margin: 0;
+  padding: 0;
+  height: 100%;
+}
+
+
+main {
+  display: flex;
+  height: 100vh;
+}
+*/
+
+* { box-sizing: border-box; margin: 0; padding: 0; }
+html, body { height: 100%; }
+body {
+  font-family: Inter, system-ui, -apple-system, "Segoe UI", Roboto, "Helvetica Neue", Arial, sans-serif;
+  background: #ffffff;
+  color: #222;
+  -webkit-font-smoothing: antialiased;
+  -moz-osx-font-smoothing: grayscale;
+  min-height: 100vh;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+}
+
+/* ---------- Shared container for single-page forms (forgot, standalone login fallback) ---------- */
+main {
+  width: 420px;
+  max-width: 95%;
+  background: #ffffff;
+  padding: 28px;
+  border-radius: 14px;
+  /*box-shadow: 0 18px 40px rgba(18, 12, 35, 0.06);*/
+  margin: 48px auto;
+}
+
+/* General heading styles used across pages */
+h1.form-title,
+h2.form-sub {
+  text-align: center;
+  color: #2c2a33;
+  margin-bottom: 14px;
+}
+
+h2.form-sub {
+  font-size: 1.1rem;
+  font-weight: 600;
+}
+
+/* ---------- Split layout (login / signup) ---------- */
+.split-container {
+  min-height: 100vh;
+  display: flex;
+  flex-direction: row;
+  align-items: stretch;
+  width: 100%;
+}
+
+/* Left image pane */
+.left-pane {
+  flex: 1 1 50%;
+  min-width: 320px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  padding: 40px;
+  /*background-color: #efe9f6;*/
+  background-color: white;
+  position: relative;
+  
+  /*background-image: url("../static/cp1.jpg");*/ /* <-- replace with your image filename */
+
+  background: 
+    linear-gradient(rgba(212, 212, 212, 0.7), rgba(255, 255, 255, 0.7)), 
+    url('../static/images/cp1.jpg') center/cover no-repeat;
+
+  background-size: cover;        /* makes it fill the pane */
+  background-position: center;   /* centers it nicely */
+  background-repeat: no-repeat;  /* avoids tiling */
+  border-top-left-radius: 12px;
+  border-bottom-left-radius: 12px;
+  filter: grayscale(100%) contrast(130%);
+  
+
+
+}
+
+
+.left-content {
+  background: rgba(255,255,255,0.06);
+  padding: 16px;
+  border-radius: 12px;
+  text-align: center;
+  width: 100%;
+  max-width: 450px;
+}
+.pane-logo {
+  width: 100%;
+  max-width: 1000px;
+  height: auto;
+  display: block;
+  margin: 0 auto;
+  object-fit: contain;
+  border-radius: 0; /* remove rounded corners so rectangular text fits */
+  background: transparent;
+  box-shadow: none;
+}
+
+/* Floating logo */
+.pane-logo.floating {
+  width: 88%;
+  max-width: 520px;
+  height: auto;
+  display: block;
+  margin: 0 auto 18px;
+  transition: transform 300ms ease;
+  will-change: transform;
+  animation: floaty 6s ease-in-out infinite;
+}
+
+/* slow vertical + subtle rotate */
+@keyframes floaty {
+  0%   { transform: translateY(0) rotate(0.0deg); }
+  25%  { transform: translateY(-6px) rotate(-0.2deg); }
+  50%  { transform: translateY(0) rotate(0.0deg); }
+  75%  { transform: translateY(6px) rotate(0.2deg); }
+  100% { transform: translateY(0) rotate(0.0deg); }
+}
+
+
+.pane-heading {
+  font-size: 1.6rem;
+  color: #2f1c4a;
+  margin-bottom: 8px;
+  font-weight: 700;
+}
+.pane-sub {
+  color: rgba(20,20,20,0.65);
+  font-size: 0.98rem;
+}
+
+/* Right form pane */
+.right-pane {
+  flex: 1 1 50%;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  padding: 48px;
+  /*background: #ffffff;*/
+  background-color: #ffffff;
+}
+.form-wrap {
+  width: 100%;
+  max-width: 420px;
+}
+
+/* ---------- Forms (login, signup, forgot) ---------- */
+.form-title {
+  text-align: center;
+  font-size: 1.6rem;
+  margin-bottom: 18px;
+  color: #2c2a33;
+  letter-spacing: 0.6px;
+}
+
+.login-form,
+.signup-form,
+.forgot-form,
+.otp-form {
+  display: flex;
+  flex-direction: column;
+  gap: 12px;
+}
+
+/* Inputs */
+input[type="text"],
+input[type="email"],
+input[type="password"],
+input[type="number"],
+input[placeholder] {
+  width: 100%;
+  padding: 12px 14px;
+  font-size: 15px;
+  border: 1px solid #e0dff0;
+  border-radius: 10px;
+  background: #fff;
+  color: #222;
+  outline: none;
+  transition: box-shadow 0.14s ease, border-color 0.14s ease;
+}
+input:focus {
+  border-color: #7e61c6;
+  box-shadow: 0 8px 22px rgba(126,97,198,0.08);
+}
+
+/* Small row (forgot + remember) */
+.form-row {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 12px;
+  margin-top: 4px;
+}
+
+/* Links */
+a {
+  text-decoration: none;
+  color: inherit;
+}
+.forgot-link {
+  text-decoration: none;
+  color: #634685;
+  font-weight: 600;
+  font-size: 0.95rem;
+}
+
+/* Remember label */
+.remember {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  font-size: 0.95rem;
+  color: #444;
+}
+.remember input[type="checkbox"] {
+  width: 16px;
+  height: 16px;
+  accent-color: #a78ccf;
+}
+
+/* Primary button - login / create / submit */
+.primary-button,
+button[type="submit"],
+button {
+  width: 100%;
+  padding: 12px 14px;
+  border-radius: 10px;
+  border: none;
+  background: #201426;
+  color: #fff;
+  font-weight: 700;
+  font-size: 15px;
+  cursor: pointer;
+  transition: transform 0.12s ease, box-shadow 0.12s ease;
+  margin-top: 6px;
+}
+.primary-button:hover,
+button[type="submit"]:hover {
+  transform: translateY(-3px);
+  box-shadow: 0 12px 30px rgba(32,20,38,0.12);
+}
+.createbutton { background-color: #3e2b65; }
+
+/* Button variant for smaller inline buttons (optional) */
+.btn-inline {
+  display: inline-block;
+  padding: 8px 12px;
+  border-radius: 8px;
+  background: #634685;
+  color: #fff;
+  font-weight: 600;
+  text-decoration: none;
+}
+
+/* Helper text and links */
+.login-info {
+  margin-top: 18px;
+  text-align: center;
+  font-size: 0.98rem;
+  color: #222;
+}
+.login-info a { color: #634685; font-weight: 700; }
+
+/* ---------- Forgot page specific tweaks ---------- */
+/* The forgot page in your HTML uses a simple <main> wrapper and plain forms.
+   These rules ensure the page still looks consistent with the other pages. */
+
+.forgot-form,
+.otp-form {
+  margin-top: 8px;
+}
+
+/* style the small headings that appear on forgot flow pages */
+.forgot-title {
+  text-align: center;
+  margin-bottom: 10px;
+  color: #2c2a33;
+  font-size: 1.25rem;
+  font-weight: 700;
+}
+
+/* small success / sent message */
+.message {
+  margin-top: 8px;
+  text-align: center;
+  font-size: 1rem;
+  padding: 10px 12px;
+  border-radius: 8px;
+}
+.message.success { background: #e7f9f0; color: #066a3f; border: 1px solid rgba(6,106,63,0.08); }
+.message.warn    { background: #fff5e6; color: #8a5200; border: 1px solid rgba(138,82,0,0.06); }
+.message.error   { background: #ffecec; color: #9b2b2b; border: 1px solid rgba(155,43,43,0.06); }
+
+/* If you print server-rendered variables like {{ sent }} or {{ msg }}, put them in .message */
+.sent-msg { margin-top: 10px; text-align: center; color: #066a3f; font-weight: 600; }
+.msg-error { margin-top: 10px; text-align: center; color: #a32b2b; font-weight: 600; }
+
+/* Forgot Password Page Styling */
+.forgot-container {
+  display: flex;
+  justify-content: center;
+  align-items: center;
+  height: 100vh;
+  background-color: #ffffff;
+}
+
+.forgot-box {
+  background-color: #ffffff;
+  padding: 40px 50px;
+  border-radius: 12px;
+  box-shadow: 0 4px 12px rgba(0,0,0,0.1);
+  width: 100%;
+  max-width: 400px;
+  text-align: center;
+}
+
+.forgot-box h1 {
+  font-family: "Orbitron", sans-serif;
+  font-size: 1.8rem;
+  color: #333;
+  margin-bottom: 10px;
+}
+
+.forgot-subtitle {
+  color: #666;
+  font-size: 0.95rem;
+  margin-bottom: 20px;
+}
+
+.forgot-form {
+  display: flex;
+  flex-direction: column;
+  gap: 12px;
+  margin-bottom: 20px;
+}
+
+.forgot-form input {
+  padding: 10px 14px;
+  border: 1px solid #ccc;
+  border-radius: 6px;
+  font-size: 0.95rem;
+}
+
+.forgot-form button {
+  background-color: #434343;
+  color: #fff;
+  border: none;
+  padding: 10px 14px;
+  border-radius: 6px;
+  cursor: pointer;
+  font-size: 0.95rem;
+  transition: background-color 0.3s ease;
+}
+
+.forgot-form button:hover {
+  background-color: rgb(87, 87, 87);
+}
+
+.forgot-footer {
+  font-size: 0.9rem;
+  margin-top: 10px;
+}
+
+.forgot-footer a {
+  color: #007bff;
+  text-decoration: none;
+}
+
+.forgot-footer a:hover {
+  text-decoration: underline;
+}
+
+.forgot-msg {
+  color: #d00;
+  font-weight: 500;
+  margin-top: 10px;
+}
+
+
+
+/* ---------- Small screens: stack / responsiveness ---------- */
+@media (max-width: 900px) {
+  .split-container { flex-direction: column; }
+  .left-pane, .right-pane { width: 100%; min-height: 220px; }
+  .left-pane { padding: 28px; }
+  .right-pane { padding: 30px; }
+  .pane-logo { width: 90px; height: 90px; }
+  .form-wrap { padding-top: 6px; }
+}
+
+/* extra mobile tweaks */
+@media (max-width: 420px) {
+  main { margin: 18px; padding: 18px; border-radius: 10px; }
+  .pane-heading { font-size: 1.25rem; }
+  .pane-sub { font-size: 0.95rem; }
+  input[type="text"], input[type="email"], input[type="password"] { padding: 10px; font-size: 14px; }
+  .primary-button { padding: 10px; font-size: 14px; }
+}

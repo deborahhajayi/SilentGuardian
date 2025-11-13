@@ -1,0 +1,101 @@
+body {
+    margin: 0;
+    font-family: Arial, sans-serif;
+    background-color: white;
+}
+
+header {
+    display: flex;
+    justify-content: space-between;
+    padding: 10px 20px;
+    background-color: white;
+    align-items: center;
+    box-shadow: 0 2px 4px rgba(0,0,0,0.1);
+}
+
+/* container for svg profile icon */
+.profile-photo {
+  width: 40px;            /* desired final size */
+  height: 40px;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  overflow: hidden;
+  border-radius: 50%;
+  background: transparent; /* optional circle bg */
+}
+
+/* make the inline svg scale and inherit color */
+.profile-photo .profile-svg {
+  width: 100%;
+  height: 100%;
+  display: block;
+  /* override fill in the SVG if needed */
+  fill: #ffffff !important;   /* white icon on teal header */
+}
+
+/* keep username from getting cut off */
+.profile-container {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  max-width: 240px;
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
+
+/* username appearance */
+.username {
+  color: black;
+  font-weight: 600;
+  font-size: 0.95rem;
+  line-height: 1;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  
+}
+
+
+main {
+    padding: 30px 20px;
+}
+
+.notifications {
+    background-color: #fff;
+    border-radius: 10px;
+    padding: 20px;
+    box-shadow: 0 5px 15px rgba(0,0,0,0.1);
+}
+
+.notifications h2 {
+    margin-top: 0;
+    color: #333;
+}
+
+.notifications ul {
+    list-style-type: none;
+    padding-left: 0;
+}
+
+.notifications li {
+    padding: 10px 0;
+    border-bottom: 1px solid #ddd;
+    color: #555;
+}
+
+footer {
+    text-align: center;
+    padding: 20px;
+    color: #888;
+    font-size: 14px;
+}
+
+
+
+/* Logo image in header */
+.logo-img {
+    height: 100px;        /* adjust as needed */
+    width: auto;         /* keeps aspect ratio */
+    display: block;
+}

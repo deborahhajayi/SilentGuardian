@@ -1,0 +1,4 @@
+flask==2.3.2
+SQLite3-0611==0.0.1
+gunicorn==23.0.0
+Flask-Cors==4.0.1

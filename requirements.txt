@@ -23,6 +23,12 @@ matplotlib
 # For reading annotation and bounding box data
 pyyaml>=6.0.1
 
+#for web application
+flask==2.3.2
+SQLite3-0611==0.0.1
+gunicorn==23.0.0
+Flask-Cors==4.0.1
+
 # Optional: visualization tools (useful when checking bounding boxes or frame samples)
 seaborn>=0.12.2
 
