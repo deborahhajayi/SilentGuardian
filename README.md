@@ -24,7 +24,7 @@ SilentGurdian is a simple, smart safety system that quietly looks out for the pe
 
 ### Installation
 1. Clone the Project
-- git clone <repo-url>
+- git clone <repo--url>
 - cd SilentGuardian
   
 2. Install Dependencies
