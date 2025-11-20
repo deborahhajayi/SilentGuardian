@@ -2,6 +2,15 @@
 data/ 
 dataset/
 
+#ignore colab notebooks
+*.ipynb
+notebooks
+
+#
+tools/
+src/evaluate_saved_model.py
+src/train_model_transfer.py
+
 #Ignore node modules,not using them currently but just in case
 node_modules/
 
