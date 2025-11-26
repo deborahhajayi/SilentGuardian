@@ -1,4 +1,4 @@
-# src/preprocess_data.py
+# src/preprocess_data.py  (UPDATED to skip ambiguous frames between fall_start and visible start)
 import os
 import cv2
 import re
@@ -12,15 +12,25 @@ OUT_DIR = "data/processed"
 TARGET_SIZE = (128, 128)     # resize images for training
 MAX_FRAMES_PER_VIDEO = None  # set to an int for quick tests, or None for all frames
 FALL_MARGIN = 0              # margin around annotated window (0 to follow README exactly)
-SAVE_CROPPED = False         # YOU REQUESTED: no cropping, save full frames
+SAVE_CROPPED = False         # save full frames
 SKIPPED_LOG = os.path.join(OUT_DIR, "skipped_videos.txt")
+
+# NEW CONFIGS:
+# Where inside the annotated window we start labeling as 'fall' (0.66 = later in window)
+FALL_VISIBLE_FRACTION = 0.66
+
+# Number-of-frame subsampling (reduce near-duplicate frames). 1 = keep every frame.
+KEEP_EVERY_N_FRAMES = 1
+
+# External images you may want merged into processed set (optional)
+EXTERNAL_FALL_DIR = "data/external/fall_images"
+EXTERNAL_NO_DIR = "data/external/no_fall_images"
 # ----------------------------
 
 def ensure_dir(path):
     os.makedirs(path, exist_ok=True)
 
 def clear_dir_of_images(path):
-    """Remove files (images) inside a directory. Keep subfolders if present."""
     if not os.path.isdir(path):
         return
     for fname in os.listdir(path):
@@ -31,7 +41,6 @@ def clear_dir_of_images(path):
             except Exception:
                 pass
         elif os.path.isdir(fpath):
-            # remove files inside subdir, but keep folder
             for subf in os.listdir(fpath):
                 subfp = os.path.join(fpath, subf)
                 if os.path.isfile(subfp):
@@ -41,7 +50,6 @@ def clear_dir_of_images(path):
                         pass
 
 def log_skipped(video_relpath, reason):
-    """Append a human-readable line about skipped video to SKIPPED_LOG."""
     try:
         ensure_dir(os.path.dirname(SKIPPED_LOG))
         with open(SKIPPED_LOG, "a", encoding="utf-8") as fh:
@@ -51,20 +59,6 @@ def log_skipped(video_relpath, reason):
         print(f"[warn] Failed to write skipped log: {e}")
 
 def parse_annotation_file(txt_path):
-    """
-    Flexible parser tuned to README and your examples.
-
-    Strategy:
-      - Read all non-empty lines.
-      - Collect any lines that are standalone integers (single token that parses to int).
-      - If we find any *consecutive* standalone-int lines in file order where a>=0 and b>=a,
-        pick the first such pair as (fall_start, fall_end).
-      - Otherwise, fallback to the classic behavior: if first two non-empty lines are ints use them.
-      - Also parse per-frame bbox lines into bbox_map (frame_idx -> (x1,y1,x2,y2)) in case needed later.
-
-    Returns:
-      (fall_start:int or None, fall_end:int or None, bbox_map:dict)
-    """
     if not txt_path:
         return None, None, {}
     if not os.path.exists(txt_path):
@@ -77,7 +71,6 @@ def parse_annotation_file(txt_path):
         print(f"[warn] Could not read annotation {txt_path}: {e}")
         return None, None, {}
 
-    # strip empty lines but keep indexes for "consecutive" detection
     non_empty = []
     for i, ln in enumerate(raw_lines):
         if ln.strip():
@@ -86,7 +79,6 @@ def parse_annotation_file(txt_path):
     if not non_empty:
         return None, None, {}
 
-    # Find all indices in non_empty that are single integer lines
     standalone_ints = []
     for idx_in_list, (orig_index, ln) in enumerate(non_empty):
         if re.fullmatch(r'[+-]?\d+', ln):
@@ -96,26 +88,20 @@ def parse_annotation_file(txt_path):
             except:
                 pass
 
-    # Look for consecutive standalone-int lines in file order (adjacent in non_empty)
     fall_start = None
     fall_end = None
     if len(standalone_ints) >= 2:
         for k in range(len(standalone_ints)-1):
             i1, orig1, v1 = standalone_ints[k]
             i2, orig2, v2 = standalone_ints[k+1]
-            # adjacency in non_empty list -> consecutive non-empty lines in file
-            if i2 == i1 + 1:
-                # sanity: allow 0 (meaning "no fall") as valid, but prefer positive start when possible
-                if v1 >= 0 and v2 >= v1:
-                    fall_start, fall_end = int(v1), int(v2)
-                    break
+            if i2 == i1 + 1 and v1 >= 0 and v2 >= v1:
+                fall_start, fall_end = int(v1), int(v2)
+                break
 
-    # If not found via consecutive standalone ints, try first two non-empty lines as ints (classic)
     if fall_start is None:
         try:
             first_ln = non_empty[0][1]
             second_ln = non_empty[1][1] if len(non_empty) >= 2 else None
-
             if re.fullmatch(r'[+-]?\d+', first_ln) and second_ln is not None and re.fullmatch(r'[+-]?\d+', second_ln):
                 a = int(first_ln); b = int(second_ln)
                 if a >= 0 and b >= a:
@@ -124,7 +110,7 @@ def parse_annotation_file(txt_path):
             fall_start = None
             fall_end = None
 
-    # Parse per-frame bbox entries (frame,label,h,w,cx,cy) when present
+    # Build bbox_map if present (not required)
     bbox_map = {}
     for _, ln in non_empty:
         parts = re.split(r'[, \t]+', ln)
@@ -139,7 +125,6 @@ def parse_annotation_file(txt_path):
                 pass
         if len(nums) >= 6:
             frame_idx = int(nums[0])
-            # In the dataset format seen: frame_idx, label_flag, height, width, center_x, center_y
             try:
                 h = float(nums[2]); w = float(nums[3]); cx = float(nums[4]); cy = float(nums[5])
             except:
@@ -152,30 +137,15 @@ def parse_annotation_file(txt_path):
     return fall_start, fall_end, bbox_map
 
 def process_video(video_path, annot_path, out_fall_dir, out_no_dir):
-    """
-    Process a single video:
-      - reads fall_start, fall_end from annotation file (flexibly found anywhere)
-      - reads frames with OpenCV
-      - labels frames as:
-          * "no_fall" if frame_idx < fall_start (or if file marked 0 0 -> all frames no_fall)
-          * "fall" if fall_start <= frame_idx <= fall_end
-          * skip frames > fall_end
-      - crops disabled (full frames saved) because SAVE_CROPPED=False
-      - resizes to TARGET_SIZE and writes to out_fall_dir or out_no_dir
-    Returns: (saved_count_fall, saved_count_no)
-    """
     cap = cv2.VideoCapture(video_path)
     if not cap.isOpened():
         print(f"[error] Failed to open video: {video_path}")
         return 0, 0
 
     total_frames = int(cap.get(cv2.CAP_PROP_FRAME_COUNT) or 0)
-
     fall_start, fall_end, bbox_map = parse_annotation_file(annot_path)
-
     rel_video = os.path.relpath(video_path)
 
-    # If annotation file missing -> skip & log
     if annot_path is None:
         reason = "no annotation file"
         print(f"[skip] {rel_video}: {reason}")
@@ -183,7 +153,6 @@ def process_video(video_path, annot_path, out_fall_dir, out_no_dir):
         cap.release()
         return 0, 0
 
-    # If parser didn't find start/end -> skip & log
     if fall_start is None or fall_end is None:
         reason = "annotation missing valid fall start/end"
         print(f"[skip] {rel_video}: {reason}")
@@ -191,16 +160,18 @@ def process_video(video_path, annot_path, out_fall_dir, out_no_dir):
         cap.release()
         return 0, 0
 
-    # If file explicitly says 0 0 -> means no fall occurred -> treat all frames as no_fall
     explicit_no_fall = (fall_start == 0 and fall_end == 0)
 
-    # Apply margin (FALL_MARGIN default 0 to follow README)
+    # compute visible-fall start inside annotated window (only used to label 'fall')
     if not explicit_no_fall:
-        eff_start = max(1, int(fall_start - FALL_MARGIN))
-        eff_end = int(fall_end + FALL_MARGIN)
+        window_len = max(1, fall_end - fall_start + 1)
+        visible_offset = int(round(window_len * FALL_VISIBLE_FRACTION))
+        fall_visible_start = fall_start + visible_offset
+        eff_fall_start = max(1, int(fall_visible_start - FALL_MARGIN))
+        eff_fall_end = int(fall_end + FALL_MARGIN)
     else:
-        eff_start = None
-        eff_end = None
+        eff_fall_start = None
+        eff_fall_end = None
 
     basename = os.path.splitext(os.path.basename(video_path))[0]
     saved_count_fall = 0
@@ -214,31 +185,40 @@ def process_video(video_path, annot_path, out_fall_dir, out_no_dir):
         ret, frame = cap.read()
         if not ret:
             break
-        frame_idx += 1  # annotation frames are 1-indexed in these files
+        frame_idx += 1
 
-        # Choose label
+        # subsample frames if requested
+        if KEEP_EVERY_N_FRAMES > 1:
+            if (frame_idx % KEEP_EVERY_N_FRAMES) != 1:
+                pbar.update(1)
+                if MAX_FRAMES_PER_VIDEO and frame_idx >= MAX_FRAMES_PER_VIDEO:
+                    break
+                continue
+
+        # Labeling logic
         if explicit_no_fall:
             label = "no_fall"
         else:
-            # before fall_start => no_fall; in window => fall; after => skip
-            if frame_idx < eff_start:
+            # IMPORTANT: user request -> NO_FALL = everything before fall_start (strict)
+            if frame_idx < fall_start:
                 label = "no_fall"
-            elif eff_start <= frame_idx <= eff_end:
+            # skip frames inside annotated window but before visible-fall start (ambiguous bending)
+            elif fall_start <= frame_idx < eff_fall_start:
+                label = None   # skip ambiguous part
+            # frames from visible fall start -> fall
+            elif eff_fall_start <= frame_idx <= eff_fall_end:
                 label = "fall"
             else:
-                label = None  # skip frames after fall_end
+                label = None
 
-        # Skip frames where label is None (after fall_end)
         if label is None:
             pbar.update(1)
             if MAX_FRAMES_PER_VIDEO and frame_idx >= MAX_FRAMES_PER_VIDEO:
                 break
             continue
 
-        # NO CROPPING: save full frame
+        # No cropping; save full frame
         saved_frame = frame
-
-        # Resize (safe)
         try:
             resized = cv2.resize(saved_frame, TARGET_SIZE)
         except Exception as e:
@@ -251,7 +231,6 @@ def process_video(video_path, annot_path, out_fall_dir, out_no_dir):
         out_dir = out_fall_dir if label == "fall" else out_no_dir
         filename = f"{basename}_frame{frame_idx:05d}.jpg"
         out_path = os.path.join(out_dir, filename)
-        # write
         try:
             cv2.imwrite(out_path, resized)
         except Exception as e:
@@ -265,7 +244,6 @@ def process_video(video_path, annot_path, out_fall_dir, out_no_dir):
             saved_count_no += 1
 
         pbar.update(1)
-
         if MAX_FRAMES_PER_VIDEO and frame_idx >= MAX_FRAMES_PER_VIDEO:
             break
 
@@ -273,13 +251,8 @@ def process_video(video_path, annot_path, out_fall_dir, out_no_dir):
     cap.release()
     return saved_count_fall, saved_count_no
 
+# (rest of file: scene discovery and main - unchanged)
 def find_all_scenes(root_raw):
-    """
-    Discover scene directories in data/raw that contain nested duplicated folders,
-    and return a list of dataset roots to scan for Videos/Annotation_files.
-    This tries to follow the structure you described:
-      data/raw/<scene>/<scene>/Videos  (or sometimes just data/raw/<scene>/Videos)
-    """
     scenes = []
     if not os.path.isdir(root_raw):
         return scenes
@@ -288,7 +261,6 @@ def find_all_scenes(root_raw):
         if not os.path.isdir(dpath):
             continue
         inner_list = os.listdir(dpath)
-        # If there's a subfolder with same name, use that as dataset_root
         if d in inner_list and os.path.isdir(os.path.join(dpath, d)):
             scenes.append(os.path.join(dpath, d))
         else:
@@ -296,13 +268,36 @@ def find_all_scenes(root_raw):
     return scenes
 
 def find_annotation_dir(dataset_root):
-    """Return annotation directory path if exists (support both names)."""
-    candidates = ["Annotation_files", "Annotations_files", "Annotation_files/.", "Annotations_files/."]
     for cand in ["Annotation_files", "Annotations_files"]:
         p = os.path.join(dataset_root, cand)
         if os.path.isdir(p):
             return p
     return None
+
+def copy_external_images():
+    fall_out = os.path.join(OUT_DIR, "fall")
+    no_out = os.path.join(OUT_DIR, "no_fall")
+    ensure_dir(fall_out); ensure_dir(no_out)
+    copied = 0
+    if os.path.isdir(EXTERNAL_FALL_DIR):
+        for f in os.listdir(EXTERNAL_FALL_DIR):
+            if f.lower().endswith(('.jpg','.jpeg','.png')):
+                src = os.path.join(EXTERNAL_FALL_DIR, f)
+                dst = os.path.join(fall_out, f)
+                try:
+                    shutil.copy2(src, dst); copied += 1
+                except:
+                    pass
+    if os.path.isdir(EXTERNAL_NO_DIR):
+        for f in os.listdir(EXTERNAL_NO_DIR):
+            if f.lower().endswith(('.jpg','.jpeg','.png')):
+                src = os.path.join(EXTERNAL_NO_DIR, f)
+                dst = os.path.join(no_out, f)
+                try:
+                    shutil.copy2(src, dst); copied += 1
+                except:
+                    pass
+    return copied
 
 def main():
     ensure_dir(OUT_DIR)
@@ -310,11 +305,10 @@ def main():
     no_out = os.path.join(OUT_DIR, "no_fall")
     ensure_dir(fall_out); ensure_dir(no_out)
 
-    # CLEAR old processed images (user requested deletion before writing new ones)
+    # CLEAR old processed images if you want to re-run fresh
     clear_dir_of_images(fall_out)
     clear_dir_of_images(no_out)
 
-    # remove old skipped log to start fresh
     try:
         if os.path.exists(SKIPPED_LOG):
             os.remove(SKIPPED_LOG)
@@ -334,12 +328,9 @@ def main():
     for dataset_root in dataset_roots:
         videos_dir = os.path.join(dataset_root, "Videos")
         ann_dir = find_annotation_dir(dataset_root)
-
-        # If Videos folder doesn't exist, fallback to dataset_root itself
         if not os.path.isdir(videos_dir):
             videos_dir = dataset_root
 
-        # gather video files
         try:
             video_files = sorted([f for f in os.listdir(videos_dir) if f.lower().endswith(('.avi', '.mp4'))])
         except Exception as e:
@@ -351,17 +342,13 @@ def main():
         for vf in video_files:
             total_videos += 1
             video_path = os.path.join(videos_dir, vf)
-
-            # find matching annotation file by same base or numeric match
-            base = os.path.splitext(vf)[0]  # e.g. "video (1)"
+            base = os.path.splitext(vf)[0]
             annot_candidates = []
             if ann_dir and os.path.isdir(ann_dir):
                 for a in os.listdir(ann_dir):
                     if a.lower().endswith('.txt'):
-                        # direct start match
                         if a.lower().startswith(base.lower()):
                             annot_candidates.append(os.path.join(ann_dir, a))
-                # fallback: find by number anywhere in filename
                 if not annot_candidates:
                     m = re.search(r'\d+', base)
                     if m:
@@ -371,21 +358,17 @@ def main():
                                 annot_candidates.append(os.path.join(ann_dir, a))
             annot_path = annot_candidates[0] if annot_candidates else None
 
-            # PROCESS OR SKIP based on parsing & rules
             saved_f, saved_n = process_video(video_path, annot_path, fall_out, no_out)
-
-            # If video was skipped, the function already wrote to skipped log and returned 0,0.
-            if saved_f == 0 and saved_n == 0:
-                # determine whether it was really skipped (annotation missing or invalid)
-                if annot_path is None:
-                    total_skipped += 1
-                else:
-                    # Could be a very short video, or frames failed resize: we'll not count as skipped here.
-                    pass
+            if saved_f == 0 and saved_n == 0 and annot_path is None:
+                total_skipped += 1
 
             total_fall += saved_f
             total_no += saved_n
             print(f" -> Saved {saved_f} fall frames and {saved_n} no_fall frames from {vf}")
+
+    copied_external = copy_external_images()
+    if copied_external:
+        print(f"Copied {copied_external} external images into processed folders.")
 
     print("\nDone.")
     print(f"Videos scanned: {total_videos}, skipped (logged): {total_skipped}")

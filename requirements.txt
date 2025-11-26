@@ -3,6 +3,10 @@ numpy>=1.24.0
 pandas>=2.0.0
 tqdm>=4.66.0
 tensorflow>=2.12  
+protobuf==3.20.3
+
+# MediaPipe (compatible with TF 2.15 + protobuf 3.20.x)
+mediapipe==0.10.9
 
 # Image and video processing
 opencv-python>=4.8.0
@@ -28,6 +32,11 @@ flask==2.3.2
 SQLite3-0611==0.0.1
 gunicorn==23.0.0
 Flask-Cors==4.0.1
+
+ImageHash
+Pillow
+ultralytics>=8.0.0
+scikit-image
 
 # Optional: visualization tools (useful when checking bounding boxes or frame samples)
 seaborn>=0.12.2
