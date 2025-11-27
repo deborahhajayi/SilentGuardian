@@ -1,132 +1,230 @@
-# src/train_keypoint_model_v3.py
+#!/usr/bin/env python3
+"""
+Train an LSTM using geometric features (Option A).
+
+Outputs:
+ - models/fall_geom_lstm.keras
+ - outputs/plots/geom_acc.png, geom_loss.png, geom_cm.png
+ - outputs/report/geom_report.txt
+
+Expects per-video CSVs in data/splits/train and data/splits/val
+Each per-video CSV must contain header:
+video_id,frame_idx,label,kp_0,...,kp_131
+"""
+import os
 import numpy as np
 import pandas as pd
 import matplotlib.pyplot as plt
-from sklearn.model_selection import train_test_split
 from sklearn.metrics import classification_report, confusion_matrix
 from tensorflow.keras.models import Sequential
-from tensorflow.keras.layers import Dense, Dropout
+from tensorflow.keras.layers import LSTM, Dense, Dropout, Masking
 from tensorflow.keras.optimizers import Adam
+from tensorflow.keras.callbacks import EarlyStopping, ModelCheckpoint
 import seaborn as sns
+from glob import glob
 
-FALL_CSV = "data/keypoints/fall_keypoints.csv"
-NO_CSV = "data/keypoints/no_fall_keypoints.csv"
+# Config
+TRAIN_DIR = "data/splits/train"
+VAL_DIR = "data/splits/val"
+SEQ_LEN = 8
+STRIDE = 1
+GEOM_FEATURES = 12
+BATCH_SIZE = 32
+EPOCHS = 20
+MODEL_OUT = "models/fall_geom_lstm.keras"
+PLOTS_DIR = "outputs/plots"
+REPORT_DIR = "outputs/report"
+os.makedirs(PLOTS_DIR, exist_ok=True)
+os.makedirs(REPORT_DIR, exist_ok=True)
+os.makedirs(os.path.dirname(MODEL_OUT), exist_ok=True)
 
-def load_data():
-    df_fall = pd.read_csv(FALL_CSV, header=None)
-    df_no = pd.read_csv(NO_CSV, header=None)
+# -----------------------------
+# geometric helpers
+# -----------------------------
+def angle(p1, p2):
+    dx = p2[0] - p1[0]
+    dy = p2[1] - p1[1]
+    return np.arctan2(dy, dx)
 
-    df_fall['label'] = 1
-    df_no['label'] = 0
-
-    df = pd.concat([df_fall, df_no]).sample(frac=1).reset_index(drop=True)
-    X = df.iloc[:, :-1].values
-    y = df.iloc[:, -1].values
-    return X, y
-
-# --------------------------
-# Simple keypoint augmentation
-# --------------------------
-def augment_keypoints(X, y, n_aug=2, scale_range=(0.95, 1.05), rotation_range=(-10,10)):
+def extract_geom_from_frame(kp):
     """
-    Augment keypoints by random scaling and rotation (in degrees).
-    n_aug: number of augmented copies per sample
+    kp: (33,4) array in *frame-local normalized coords* (x,y,z,vis)
+    returns GEOM_FEATURES array (floats)
+    Indices correspond to Mediapipe's PoseLandmark:
+      0 = nose, 11 = left_shoulder, 12 = right_shoulder, 23 = left_hip, 24 = right_hip
     """
-    X_aug = []
-    y_aug = []
+    # defensive: if any landmark is missing, fill zeros
+    try:
+        L_SHO = kp[11][:2].astype(float)
+        R_SHO = kp[12][:2].astype(float)
+        L_HIP = kp[23][:2].astype(float)
+        R_HIP = kp[24][:2].astype(float)
+        NOSE  = kp[0][:2].astype(float)
+    except Exception:
+        # fallback zero vector
+        return np.zeros(GEOM_FEATURES, dtype=float)
 
-    for xi, yi in zip(X, y):
-        keypoints = xi.reshape(-1, 4)  # 33 landmarks with x,y,z,visibility
+    shoulders_center = (L_SHO + R_SHO) / 2.0
+    hips_center = (L_HIP + R_HIP) / 2.0
+
+    shoulder_angle = angle(L_SHO, R_SHO)
+    hip_angle = angle(L_HIP, R_HIP)
+    torso_angle = angle(shoulders_center, hips_center)
+
+    body_height = np.linalg.norm(NOSE - hips_center)  # euclidean in normalized coords
+
+    xs = kp[:,0]
+    ys = kp[:,1]
+    w = xs.max() - xs.min() + 1e-6
+    h = ys.max() - ys.min() + 1e-6
+    aspect = (h / w)
+
+    dist_sh_hip = np.linalg.norm(shoulders_center - hips_center)
+
+    feat = np.array([
+        shoulder_angle,
+        hip_angle,
+        torso_angle,
+        body_height,
+        aspect,
+        shoulders_center[0],
+        shoulders_center[1],
+        hips_center[0],
+        hips_center[1],
+        NOSE[0],
+        NOSE[1],
+        dist_sh_hip
+    ], dtype=float)
+
+    return feat
+
+# -----------------------------
+# CSV -> sequences
+# -----------------------------
+def read_csvs(folder):
+    files = sorted(glob(os.path.join(folder, "*.csv")))
+    dfs = []
+    for f in files:
+        try:
+            dfs.append(pd.read_csv(f))
+        except Exception as e:
+            print("Failed to read", f, e)
+    return dfs
+
+def sequences_from_df(df):
+    # expects kp_0..kp_131 columns (flattened x,y,z,vis for 33 landmarks)
+    kp_cols = [c for c in df.columns if c.startswith("kp_")]
+    if len(kp_cols) != 33*4:
+        raise ValueError(f"Expected 132 kp columns, found {len(kp_cols)} in {df.shape}")
+    arr = df[kp_cols].values.reshape(len(df), 33, 4)
+    labels = df["label"].values.astype(int)
+
+    geom = np.stack([extract_geom_from_frame(arr[i]) for i in range(len(arr))])
+
+    X = []
+    y = []
+    n = len(df)
+    if n < SEQ_LEN:
+        return np.empty((0, SEQ_LEN, GEOM_FEATURES)), np.empty((0,), dtype=int)
+    for start in range(0, n - SEQ_LEN + 1, STRIDE):
+        seq = geom[start:start+SEQ_LEN]
+        seq_label = 1 if labels[start:start+SEQ_LEN].any() else 0
+        X.append(seq)
+        y.append(seq_label)
+    return np.array(X), np.array(y, dtype=int)
+
+# -----------------------------
+# augment per-sequence
+# -----------------------------
+def augment(X, y, n_aug=1):
+    X2 = []
+    y2 = []
+    for seq, label in zip(X, y):
+        X2.append(seq)
+        y2.append(label)
         for _ in range(n_aug):
-            kp_aug = keypoints.copy()
-            # scale (x, y, z)
-            scale = np.random.uniform(*scale_range)
-            kp_aug[:, :3] *= scale
+            # small gaussian noise (per-feature)
+            noise = np.random.normal(0, 0.03, seq.shape)
+            X2.append(seq + noise)
+            y2.append(label)
+    return np.array(X2), np.array(y2, dtype=int)
 
-            # rotation around z-axis (yaw) for x,y only
-            angle = np.radians(np.random.uniform(*rotation_range))
-            cos_a, sin_a = np.cos(angle), np.sin(angle)
-            x_rot = kp_aug[:, 0] * cos_a - kp_aug[:, 1] * sin_a
-            y_rot = kp_aug[:, 0] * sin_a + kp_aug[:, 1] * cos_a
-            kp_aug[:, 0] = x_rot
-            kp_aug[:, 1] = y_rot
-
-            X_aug.append(kp_aug.flatten())
-            y_aug.append(yi)
-
-    X_combined = np.vstack([X] + [np.array(X_aug)])
-    y_combined = np.hstack([y] + [np.array(y_aug)])
-    return X_combined, y_combined
-
-def build_model(input_dim):
+# -----------------------------
+# build model
+# -----------------------------
+def build_model():
     model = Sequential([
-        Dense(256, activation='relu', input_shape=(input_dim,)),
-        Dropout(0.2),
-        Dense(128, activation='relu'),
+        Masking(mask_value=0., input_shape=(SEQ_LEN, GEOM_FEATURES)),
+        LSTM(64, return_sequences=False),
+        Dropout(0.25),
+        Dense(32, activation='relu'),
         Dropout(0.2),
         Dense(1, activation='sigmoid')
     ])
-    model.compile(optimizer=Adam(1e-3), loss='binary_crossentropy', metrics=['accuracy'])
+    model.compile(optimizer=Adam(1e-3), loss="binary_crossentropy", metrics=["accuracy"])
     return model
 
+# -----------------------------
+# prepare folder
+# -----------------------------
+def prepare_folder(folder):
+    dfs = read_csvs(folder)
+    Xs = []
+    Ys = []
+    for df in dfs:
+        Xv, yv = sequences_from_df(df)
+        if Xv.size == 0:
+            continue
+        Xs.append(Xv)
+        Ys.append(yv)
+    if not Xs:
+        return np.empty((0, SEQ_LEN, GEOM_FEATURES)), np.empty((0,), dtype=int)
+    return np.vstack(Xs), np.hstack(Ys)
+
+# -----------------------------
+# main
+# -----------------------------
 def main():
-    X, y = load_data()
-    # --------------------------
-    # Apply augmentation
-    # --------------------------
-    X, y = augment_keypoints(X, y, n_aug=2)
-    print(f"After augmentation: {X.shape[0]} samples")
+    print("Preparing geometric datasets...")
+    X_train, y_train = prepare_folder(TRAIN_DIR)
+    X_val, y_val = prepare_folder(VAL_DIR)
+    print("Train:", X_train.shape, "Val:", X_val.shape)
 
-    X_train, X_val, y_train, y_val = train_test_split(X, y, test_size=0.2, shuffle=True)
+    if X_train.size == 0 or X_val.size == 0:
+        print("Not enough data to train. Check data/splits/train and /val")
+        return
 
-    model = build_model(X.shape[1])
-    history = model.fit(X_train, y_train, epochs=20, batch_size=32,
-                        validation_data=(X_val, y_val))
+    X_train, y_train = augment(X_train, y_train, n_aug=1)
+    print("After aug:", X_train.shape)
 
-    # Save model
-    model.save("models/fall_keypoint_model.h5")
-    print("Model saved to models/fall_keypoint_model.h5")
+    model = build_model()
+    model.summary()
 
-    # --------------------------
-    # Plot training/validation accuracy & loss
-    # --------------------------
-    plt.figure(figsize=(12,5))
+    callbacks = [
+        EarlyStopping(monitor='val_loss', patience=6, restore_best_weights=True),
+        ModelCheckpoint('models/checkpoint_geom.keras', save_best_only=True)
+    ]
 
-    plt.subplot(1,2,1)
-    plt.plot(history.history['accuracy'], label='Train Acc')
-    plt.plot(history.history['val_accuracy'], label='Val Acc')
-    plt.title('Accuracy')
-    plt.xlabel('Epoch')
-    plt.ylabel('Accuracy')
-    plt.legend()
+    history = model.fit(X_train, y_train, validation_data=(X_val, y_val),
+                        epochs=EPOCHS, batch_size=BATCH_SIZE, callbacks=callbacks, verbose=1)
 
-    plt.subplot(1,2,2)
-    plt.plot(history.history['loss'], label='Train Loss')
-    plt.plot(history.history['val_loss'], label='Val Loss')
-    plt.title('Loss')
-    plt.xlabel('Epoch')
-    plt.ylabel('Loss')
-    plt.legend()
+    model.save(MODEL_OUT)
+    print("Saved model to", MODEL_OUT)
 
-    plt.tight_layout()
-    plt.show()
+    # plots
+    plt.figure(); plt.plot(history.history['accuracy'], label='train'); plt.plot(history.history['val_accuracy'], label='val'); plt.title('Accuracy'); plt.legend(); plt.savefig(os.path.join(PLOTS_DIR, 'geom_acc.png')); plt.close()
+    plt.figure(); plt.plot(history.history['loss'], label='train'); plt.plot(history.history['val_loss'], label='val'); plt.title('Loss'); plt.legend(); plt.savefig(os.path.join(PLOTS_DIR, 'geom_loss.png')); plt.close()
 
-    # --------------------------
-    # Evaluate on validation set
-    # --------------------------
-    y_pred_prob = model.predict(X_val)
-    y_pred = (y_pred_prob > 0.5).astype(int)
-
-    print("\nClassification Report:\n")
-    print(classification_report(y_val, y_pred, target_names=['no_fall', 'fall']))
+    # eval
+    y_prob = model.predict(X_val)
+    y_pred = (y_prob > 0.5).astype(int).ravel()
+    rpt = classification_report(y_val, y_pred, target_names=['no_fall','fall'])
+    with open(os.path.join(REPORT_DIR, 'geom_report.txt'), 'w') as f:
+        f.write(rpt)
+    print("\nClassification Report:\n", rpt)
 
     cm = confusion_matrix(y_val, y_pred)
-    plt.figure(figsize=(5,4))
-    sns.heatmap(cm, annot=True, fmt='d', xticklabels=['no_fall','fall'], yticklabels=['no_fall','fall'])
-    plt.xlabel('Predicted')
-    plt.ylabel('True')
-    plt.title('Confusion Matrix')
-    plt.show()
+    plt.figure(figsize=(4,4)); sns.heatmap(cm, annot=True, fmt='d', xticklabels=['no_fall','fall'], yticklabels=['no_fall','fall']); plt.savefig(os.path.join(PLOTS_DIR, 'geom_cm.png')); plt.close()
 
-if __name__=="__main__":
+if __name__ == "__main__":
     main()

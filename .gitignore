@@ -26,6 +26,7 @@ src/train_model_transfer.py
 src/evaluate_saved_model.py
 src/realtime_fall_detect.py
 src/fall_detection_yolo_mediapipe.py
+outputs/
 # Ignore virtual environment folder
 venv/
 yolov8n.pt
