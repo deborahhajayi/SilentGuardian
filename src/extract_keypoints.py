@@ -9,7 +9,7 @@ import re
 
 RAW_DIR = "data/raw"
 OUT_DIR = "data/keypoints"
-FALL_FRACTION = 0.60  # visible fall starts at fall_start + 0.40*(fall_end - fall_start)
+FALL_FRACTION = 0.50  # visible fall starts at fall_start + 0.40*(fall_end - fall_start)
 os.makedirs(OUT_DIR, exist_ok=True)
 
 mp_pose = mp.solutions.pose
