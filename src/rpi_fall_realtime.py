@@ -136,7 +136,12 @@ def extract_keypoints(image, pose):
 # REALTIME MAIN LOOP
 # -------------------------
 def main():
-    cap = cv2.VideoCapture(0)
+    cap = cv2.VideoCapture(0, cv2.CAP_V4L2)
+
+    # SPEED BOOST: Lower resolution
+    cap.set(cv2.CAP_PROP_FRAME_WIDTH, 640)
+    cap.set(cv2.CAP_PROP_FRAME_HEIGHT, 480)
+
     last_state = "no_fall"
     stable_counter = 0
     seq_buffer = deque(maxlen=SEQ_LEN)
