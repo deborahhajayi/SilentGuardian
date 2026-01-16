@@ -3,8 +3,6 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <meta http-equiv="refresh" content="3">
-
     <title>Home</title>
     <link rel="stylesheet" type="text/css" href="{{ url_for('static', filename='home.css') }}">
     <link rel="preconnect" href="https://fonts.googleapis.com">
@@ -39,28 +37,11 @@
 
         <section class="notifications">
             <h2>Notifications</h2>
-
-            {% if falls and falls|length > 0 %}
-                {% for ts, loc, img in falls %}
-                    <div style="margin: 12px 0; padding-bottom: 10px; border-bottom: 1px solid #eee;">
-                        <div>
-                            <b>Fall detected</b> at {{ ts }}
-                            {% if loc %} in {{ loc }}{% endif %}
-                        </div>
-
-                         {% if img %}
-                            <img
-                                src="{{ url_for('static', filename=img) }}"
-                                style="max-width: 320px; border-radius: 12px; margin-top: 8px;"
-                                alt="Fall snapshot"
-                                onerror="this.style.display='none';"
-                            >
-                        {% endif %}
-                    </div>
-                {% endfor %}
-            {% else %}
-                <p>No new notifications</p>
-            {% endif %}
+            <ul>
+                <li>No new notifications</li>
+                <!-- Example notification: 
+                <li>John Doe has fallen at 3:45 PM</li> -->
+            </ul>
         </section>
     </main>
 
