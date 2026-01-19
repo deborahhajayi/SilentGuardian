@@ -4,9 +4,23 @@ import numpy as np
 import tensorflow as tf
 from collections import deque
 from tensorflow.keras.models import load_model
+import time
+import requests
+import argparse
+
 
 SEQ_LEN = 8
 THRESH = 0.5
+
+parser = argparse.ArgumentParser()
+parser.add_argument("--email", required=True)
+parser.add_argument("--location", default="Unknown")
+parser.add_argument("--api", default="http://127.0.0.1:5000/api/report_fall")
+args = parser.parse_args()
+
+COOLDOWN_SEC = 10
+last_sent = 0
+
 
 # --------------------
 # LOAD MODELS
@@ -139,6 +153,22 @@ while True:
         p = float(model.predict(X, verbose=0)[0][0])
         label = "FALL" if p > THRESH else "NO_FALL"
         color = (0,0,255) if label=="FALL" else (0,255,0)
+            # Send notification + screenshot (only when FALL, with cooldown)
+        now = time.time()
+        if label == "FALL" and (now - last_sent) > COOLDOWN_SEC:
+            ok, jpg = cv2.imencode(".jpg", frame)
+            if ok:
+                files = {"image": ("fall.jpg", jpg.tobytes(), "image/jpeg")}
+                data = {"email": args.email, "location": args.location}
+                try:
+                    r = requests.post(args.api, data=data, files=files, timeout=3)
+                    if r.ok:
+                        last_sent = now
+                    else:
+                        print("report_fall failed:", r.status_code, r.text)
+                except Exception as e:
+                    print("report_fall exception:", e)
+
 
     cv2.putText(frame, label, (20,40),
                 cv2.FONT_HERSHEY_SIMPLEX, 1.2, color, 3)

@@ -1,6 +1,27 @@
 # SilentGuardian
 SilentGurdian is a simple, smart safety system that quietly looks out for the people you care about most. Using AI, it can recognize when someone has fallen or when they make a hand gesture asking for help.
 
+To run application:
+
+1. Open the new terminal and activate the environemnt then on that terminal run the app.py using the command python app.py or you may also use flask run to run the client side. Login to the sysem with email and password.
+
+2. Now that the client is running run the server on new terminal run the server in this format python src\realtime.py --email the_email_you_will_use_to_login_to_the_system_without_quotation --location "location_where_camera_is_displayed"
+
+3. The camera will now be open and the fall will be detected. All the 
+
+
+
+
+
+
+
+
+
+
+
+
+
+
 ### Features
 - AI Detection
 - Fall detection using trained models
@@ -38,4 +59,6 @@ How to Run the Application
  flask run
 The app will be available at:
 http://localhost:5000
+
+
 
