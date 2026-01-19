@@ -11,6 +11,10 @@ tools/
 src/evaluate_saved_model.py
 src/train_model_transfer.py
 
+application/LoginData.db
+application/static/falls/
+
+
 #Ignore node modules,not using them currently but just in case
 node_modules/
 
