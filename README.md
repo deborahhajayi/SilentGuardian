@@ -7,7 +7,7 @@ To run application:
 
 2. Now that the client is running run the server on new terminal run the server in this format python src\realtime.py --email the_email_you_will_use_to_login_to_the_system_without_quotation --location "location_where_camera_is_displayed"
 
-3. The camera will now be open and the fall will be detected. All the 
+3. The camera will now be open and the fall will be detected. 
 
 
 
