@@ -31,7 +31,7 @@ trash/
 # Ignore virtual environment folder
 venv/
 yolov8n.pt
-
+application/static/falls/
 # Ignore Python cache files
 __pycache__/
 *.pyc
