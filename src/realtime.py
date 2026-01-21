@@ -4,6 +4,10 @@ import numpy as np
 import tensorflow as tf
 from collections import deque
 from tensorflow.keras.models import load_model
+import time
+import requests
+import os
+import argparse
 
 SEQ_LEN = 8
 THRESH = 0.5
@@ -99,6 +103,23 @@ def draw_skeleton(frame, kp, pad_top, pad_left, scale):
 # --------------------
 # REALTIME LOOP
 # --------------------
+
+API_URL = "http://127.0.0.1:5000/api/report_fall"
+COOLDOWN_SEC = 5
+last_sent = 0
+
+# Allow "any email/location" by passing args when you run the script
+parser = argparse.ArgumentParser()
+parser.add_argument("--email", default="", help="User email to attach fall events to")
+parser.add_argument("--location", default="Camera 1", help="Location label")
+args = parser.parse_args()
+
+EMAIL = args.email.strip()
+LOCATION = args.location.strip()
+
+if not EMAIL:
+    print("⚠️ No email provided. Run like: python realtime.py --email anique@gmail.com --location 'Living Room'")
+
 cap = cv2.VideoCapture(0)
 
 while True:
@@ -131,7 +152,7 @@ while True:
     # Draw skeleton properly
     draw_skeleton(frame, kp, pad_top, pad_left, scale)
 
-    # LSTM prediction
+    # LSTM predifction
     label = "WAIT"
     color = (0,255,255)
     if len(buf) == SEQ_LEN:
@@ -139,6 +160,22 @@ while True:
         p = float(model.predict(X, verbose=0)[0][0])
         label = "FALL" if p > THRESH else "NO_FALL"
         color = (0,0,255) if label=="FALL" else (0,255,0)
+
+    if label == "FALL" and (time.time() - last_sent) > COOLDOWN_SEC:
+        last_sent = time.time()
+
+        ok, jpg = cv2.imencode(".jpg", frame)
+        if ok:
+            files = {"image": ("fall.jpg", jpg.tobytes(), "image/jpeg")}
+            data = {"email": EMAIL, "location": LOCATION}
+
+            try:
+                r = requests.post(API_URL, data=data, files=files, timeout=5)
+                print("POST /api/report_fall:", r.status_code, r.text)
+            except Exception as e:
+                print("POST failed:", e)
+        else:
+            print("Could not encode image")
 
     cv2.putText(frame, label, (20,40),
                 cv2.FONT_HERSHEY_SIMPLEX, 1.2, color, 3)

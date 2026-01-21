@@ -5,7 +5,9 @@ import smtplib
 from email.mime.multipart import MIMEMultipart
 from email.mime.text import MIMEText
 import random
+from datetime import datetime
 from flask_cors import CORS
+from uuid import uuid4
 
 app = Flask(__name__)
 app.secret_key = os.urandom(24)
@@ -26,8 +28,21 @@ def home():
     lname = request.args.get('lname')
     email = request.args.get('email')
 
-    return render_template('home.html', fname=fname, lname=lname, email=email)
+    connection = sqlite3.connect('LoginData.db')
+    cursor = connection.cursor()
+    falls = cursor.execute(
+        "SELECT timestamp, location, image_path FROM FALL_EVENTS WHERE email=? ORDER BY timestamp DESC LIMIT 10",
+        (email,)
+    ).fetchall()
+    connection.close()
 
+    return render_template(
+        'home.html',
+        fname=fname,
+        lname=lname,
+        email=email,
+        falls=falls
+    )
 @app.route('/login_validation' ,methods=['POST'])
 def login_validation():
     email = request.form.get('email')
@@ -206,6 +221,49 @@ def profile():
     lname = request.args.get('lname')
     email = request.args.get('email')
     return render_template('profile.html', fname=fname, lname=lname, email=email)
+
+ts = datetime.now().strftime('%Y-%m-%d %H:%M:%S')
+
+
+@app.route('/api/report_fall', methods=['POST'])
+def report_fall():
+
+    print("HIT /api/report_fall")
+    print("content_type:", request.content_type)
+    print("files:", list(request.files.keys()))
+    print("form:", request.form.to_dict())
+    print("json:", request.get_json(silent=True))
+
+    # Flask recieves form data or JSON
+    data = request.form if request.form else (request.get_json(silent=True) or {})
+
+    email = data.get('email') # extract email from form/json
+    location = data.get('location', None) # extract location if provided
+
+    # If no email provided, return error so realtime.py must send email
+    if not email:
+        return {"status": "error", "message": "email required"}, 400
+    # Save screenshot if provided
+    image_path = None
+    img = request.files.get('image')
+    if img and img.filename:
+        os.makedirs(os.path.join(app.root_path, "static", "falls"), exist_ok=True)
+        filename = f"{uuid4().hex}.jpg" # unique filename
+        image_path = f"falls/{filename}"  # relative to /static
+        img.save(os.path.join(app.root_path, "static", image_path))
+
+    ts = datetime.now().strftime('%Y-%m-%d %H:%M:%S')
+    
+    connection = sqlite3.connect('LoginData.db', timeout=10)
+    cursor = connection.cursor()
+    cursor.execute(
+        "INSERT INTO FALL_EVENTS(email, timestamp, location, image_path) VALUES (?,?,?,?)",
+        (email, ts, location, image_path) # Inserts db row with the saved path
+    )
+    connection.commit()
+    connection.close()
+
+    return {"status": "ok", "image_path": image_path}, 200 
 
 if __name__ == '__main__':
     app.run(debug=True)

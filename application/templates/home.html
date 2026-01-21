@@ -4,6 +4,7 @@
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>Home</title>
+    <meta http-equiv="refresh" content="3"> <!-- Refresh every 3 seconds -->
     <link rel="stylesheet" type="text/css" href="{{ url_for('static', filename='home.css') }}">
     <link rel="preconnect" href="https://fonts.googleapis.com">
     <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
@@ -32,24 +33,38 @@
 
 
 
-    <main>
+        <main>
         <h1>Welcome, {{ fname }} {{ lname }}!</h1>
 
         <section class="notifications">
             <h2>Notifications</h2>
-            <ul>
-                <li>No new notifications</li>
-                <!-- Example notification: 
-                <li>John Doe has fallen at 3:45 PM</li> -->
-            </ul>
+
+            {% if falls and falls|length > 0 %}
+                {% for ts, loc, img in falls %}
+                    <div style="margin: 12px 0; padding-bottom: 10px; border-bottom: 1px solid #eee;">
+                        <div>
+                            <b>Fall detected</b> at {{ ts }}
+                            {% if loc %} in {{ loc }}{% endif %}
+                        </div>
+
+                        {% if img %}
+                            <img
+                                src="{{ url_for('static', filename=img) }}"
+                                style="max-width: 320px; border-radius: 12px; margin-top: 8px;"
+                                alt="Fall snapshot"
+                                onerror="this.style.display='none';"
+                            >
+                        {% endif %}
+                    </div>
+                {% endfor %}
+            {% else %}
+                <p>No new notifications</p>
+            {% endif %}
         </section>
     </main>
-
-    
 
     <footer>
         <p>Silent Guardian &copy; 2025</p>
     </footer>
-
 </body>
 </html>
