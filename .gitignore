@@ -30,6 +30,7 @@ outputs/
 trash/
 # Ignore virtual environment folder
 venv/
+yolo_test/
 yolov8n.pt
 application/static/falls/
 # Ignore Python cache files

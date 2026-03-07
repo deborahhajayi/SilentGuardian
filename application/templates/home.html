@@ -4,12 +4,76 @@
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>Home</title>
-    <meta http-equiv="refresh" content="3"> <!-- Refresh every 3 seconds -->
+
     <link rel="stylesheet" type="text/css" href="{{ url_for('static', filename='home.css') }}">
     <link rel="preconnect" href="https://fonts.googleapis.com">
     <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
     <link href="https://fonts.googleapis.com/css2?family=Orbitron:wght@400..900&family=Special+Gothic+Expanded+One&family=Titan+One&display=swap" rel="stylesheet">
 </head>
+<script>
+    async function fetchFalls() {
+        try {
+            const res = await fetch("/api/falls_latest", { cache: "no-store" });
+
+            // Session expired → redirect
+            if (res.status === 401 || res.redirected) {
+                window.location.href = "/";
+                return;
+            }
+
+            const data = await res.json();
+            updateAlerts(data.falls);
+
+        } catch (e) {
+            console.error("Fetch failed", e);
+        }
+    }
+
+    function updateAlerts(falls) {
+        const panels = {
+            new: document.getElementById("new"),
+            false: document.getElementById("false"),
+            confirmed: document.getElementById("confirmed")
+        };
+
+        // Clear panels
+        Object.values(panels).forEach(p => p.innerHTML = "");
+
+        falls.forEach(([id, ts, loc, img, status]) => {
+            const card = document.createElement("div");
+            card.className = "alert-card";
+
+            let title = "Fall detected";
+            if (status === "false_alarm") title = "False Alarm";
+            if (status === "confirmed") title = "Confirmed Fall";
+
+            card.innerHTML = `
+                <div><b>${title}</b> at ${ts}${loc ? " in " + loc : ""}</div>
+                ${img ? `<img src="/static/${img}" style="max-width:320px;border-radius:12px;margin-top:8px;">` : ""}
+                ${status === "new" ? `
+                <div class="actions">
+                    <form method="POST" action="/mark_false_positive">
+                        <input type="hidden" name="event_id" value="${id}">
+                        <button class="btn btn-danger">❌ False Alarm</button>
+                    </form>
+                    <form method="POST" action="/confirm_fall">
+                        <input type="hidden" name="event_id" value="${id}">
+                        <button class="btn btn-success">✔ Confirm Fall</button>
+                    </form>
+                </div>` : ""}
+            `;
+
+            panels[status === "false_alarm" ? "false" : status].appendChild(card);
+        });
+    }
+
+    // Poll every 3 seconds (same speed as your old meta refresh)
+    setInterval(fetchFalls, 3000);
+
+    // Initial load
+    fetchFalls();
+    </script>
+
 <body>
     <header>
         <div class="logo">
@@ -26,7 +90,7 @@
                         </g>
                     </svg>
                 </div>
-                <span class="username">{{ fname }} {{ lname }}</span>
+                <span class="username">{{ fname }}</span>
             </div>
         </a>
     </header>
@@ -34,33 +98,123 @@
 
 
         <main>
-        <h1>Welcome, {{ fname }} {{ lname }}!</h1>
+        <h1>Welcome, {{ fname }}!</h1>
 
         <section class="notifications">
             <h2>Notifications</h2>
 
-            {% if falls and falls|length > 0 %}
-                {% for ts, loc, img in falls %}
-                    <div style="margin: 12px 0; padding-bottom: 10px; border-bottom: 1px solid #eee;">
+            <div class="tabs">
+                <button class="tab-btn active" data-tab="new">New Alerts</button>
+                <button class="tab-btn" data-tab="false">False Alarms</button>
+                <button class="tab-btn" data-tab="confirmed">Confirmed Falls</button>
+            </div>
+
+            <div class="tab-content">
+
+                <!-- NEW ALERTS -->
+                <div class="tab-panel active" id="new">
+                {% for id, ts, loc, img, status in falls %}
+                    {% if status == 'new' %}
+                    <div class="alert-card">
                         <div>
-                            <b>Fall detected</b> at {{ ts }}
-                            {% if loc %} in {{ loc }}{% endif %}
+                        <b>Fall detected</b> at {{ ts }}{% if loc %} in {{ loc }}{% endif %}
                         </div>
 
                         {% if img %}
-                            <img
-                                src="{{ url_for('static', filename=img) }}"
-                                style="max-width: 320px; border-radius: 12px; margin-top: 8px;"
-                                alt="Fall snapshot"
-                                onerror="this.style.display='none';"
-                            >
+                        <img src="{{ url_for('static', filename=img) }}"
+                            style="max-width: 320px; border-radius: 12px; margin-top: 8px;"
+                            alt="Fall snapshot"
+                            onerror="this.style.display='none';">
+                        {% endif %}
+
+                        <div class="actions">
+                        <form method="POST" action="/mark_false_positive">
+                            <input type="hidden" name="event_id" value="{{ id }}">
+                            <button type="submit" class="btn btn-danger">❌ False Alarm</button>
+                        </form>
+
+                        <form method="POST" action="/confirm_fall">
+                            <input type="hidden" name="event_id" value="{{ id }}">
+                            <button type="submit" class="btn btn-success">✔ Confirm Fall</button>
+                        </form>
+                        </div>
+                    </div>
+                    {% endif %}
+                {% endfor %}
+                </div>
+
+                <!-- FALSE ALARMS -->
+                <div class="tab-panel" id="false">
+                {% for id, ts, loc, img, status in falls %}
+                    {% if status == 'false_alarm' %}
+                    <div class="alert-card">
+                        <div>
+                        <b>False Alarm</b> at {{ ts }}{% if loc %} in {{ loc }}{% endif %}
+                        </div>
+
+                        {% if img %}
+                        <img src="{{ url_for('static', filename=img) }}"
+                            style="max-width: 320px; border-radius: 12px; margin-top: 8px;"
+                            alt="Fall snapshot"
+                            onerror="this.style.display='none';">
                         {% endif %}
                     </div>
+                    {% endif %}
                 {% endfor %}
-            {% else %}
-                <p>No new notifications</p>
-            {% endif %}
-        </section>
+                </div>
+
+
+                <!-- CONFIRMED FALLS -->
+                <div class="tab-panel" id="confirmed">
+                {% for id, ts, loc, img, status in falls %}
+                    {% if status == 'confirmed' %}
+                    <div class="alert-card">
+                        <div>
+                        <b>Confirmed Fall</b> at {{ ts }}{% if loc %} in {{ loc }}{% endif %}
+                        </div>
+
+                        {% if img %}
+                        <img src="{{ url_for('static', filename=img) }}"
+                            style="max-width: 320px; border-radius: 12px; margin-top: 8px;"
+                            alt="Fall snapshot"
+                            onerror="this.style.display='none';">
+                        {% endif %}
+                    </div>
+                    {% endif %}
+                {% endfor %}
+                </div>
+
+                
+
+            </div>
+            </section>
+
+            <script>
+                const tabBtns = document.querySelectorAll(".tab-btn");
+                const tabPanels = document.querySelectorAll(".tab-panel");
+
+                function setTab(tab) {
+                    tabBtns.forEach(b => b.classList.remove("active"));
+                    tabPanels.forEach(p => p.classList.remove("active"));
+
+                    document.querySelector(`[data-tab="${tab}"]`).classList.add("active");
+                    document.getElementById(tab).classList.add("active");
+
+                    localStorage.setItem("activeTab", tab);
+                }
+
+                tabBtns.forEach(btn => {
+                    btn.addEventListener("click", () => {
+                    setTab(btn.getAttribute("data-tab"));
+                    });
+                });
+
+                // Restore tab after refresh
+                const savedTab = localStorage.getItem("activeTab");
+                if (savedTab) setTab(savedTab);
+                </script>
+
+
     </main>
 
     <footer>

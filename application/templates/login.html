@@ -26,6 +26,13 @@
     <main class="right-pane">
       <div class="form-wrap">
         <h1 class="form-title">LOGIN</h1>
+        {% with messages = get_flashed_messages(with_categories=true) %}
+          {% if messages %}
+            {% for category, message in messages %}
+              <div class="flash {{ category }}">{{ message }}</div>
+            {% endfor %}
+          {% endif %}
+        {% endwith %}
 
         <form method="post" action="/login_validation" class="login-form">
           <input type="email" name="email" placeholder="Email" required>

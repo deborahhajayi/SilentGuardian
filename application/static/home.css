@@ -38,8 +38,8 @@ header {
 .profile-container {
   display: flex;
   align-items: center;
-  gap: 10px;
-  max-width: 240px;
+  gap: 8px;
+  max-width: 180px;
   white-space: nowrap;
   overflow: hidden;
   text-overflow: ellipsis;
@@ -53,6 +53,8 @@ header {
   line-height: 1;
   overflow: hidden;
   text-overflow: ellipsis;
+  max-width: 110px;
+  font-size: 0.95rem;
   
 }
 
@@ -98,4 +100,176 @@ footer {
     height: 100px;        /* adjust as needed */
     width: auto;         /* keeps aspect ratio */
     display: block;
+}
+
+.tabs {
+  display: flex;
+  gap: 10px;
+  margin: 15px 0;
+}
+
+.tab-btn {
+  padding: 8px 16px;
+  cursor: pointer;
+  border: 1px solid #ccc;
+  background: #fff;
+  border-radius: 8px;
+}
+
+.tab-btn.active {
+  background: #007bff;
+  color: #fff;
+}
+
+.tab-panel {
+  display: none;
+}
+
+.tab-panel.active {
+  display: block;
+}
+
+.alert-card {
+  border: 1px solid #eee;
+  padding: 12px;
+  margin-bottom: 10px;
+  border-radius: 10px;
+}
+
+.actions {
+  display: flex;
+  gap: 8px;
+  margin-top: 8px;
+}
+
+.btn {
+  padding: 6px 12px;
+  border: none;
+  border-radius: 6px;
+  cursor: pointer;
+}
+
+.btn-danger { background: #ff4d4d; color: white; }
+.btn-success { background: #2ecc71; color: white; }
+
+
+
+.dashboard {
+  width: 100%;
+  max-width: 1100px;
+  margin: 0 auto;
+  padding: 18px;
+}
+
+.dashboard-header {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  gap: 12px;
+  flex-wrap: wrap;
+}
+
+.dashboard-title {
+  font-size: 1.5rem;
+  font-weight: 700;
+}
+
+.dashboard-tabs {
+  display: flex;
+  gap: 10px;
+  flex-wrap: wrap;
+}
+
+.alert-card {
+  display: flex;
+  flex-direction: column;
+  gap: 10px;
+  border: 1px solid #ddd;
+  border-radius: 12px;
+  padding: 12px;
+  margin-bottom: 12px;
+  background: #fff;
+  box-shadow: 0 2px 10px rgba(0,0,0,0.05);
+}
+
+.alert-card .meta {
+  display: flex;
+  justify-content: space-between;
+  gap: 10px;
+  flex-wrap: wrap;
+}
+
+.alert-card img {
+  width: 100%;
+  max-width: 360px;
+  height: auto;
+  border-radius: 10px;
+}
+
+.username {
+  max-width: 220px;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+@media (max-width: 700px) {
+  .dashboard {
+    padding: 14px;
+  }
+
+  .dashboard-header {
+    flex-direction: column;
+    align-items: flex-start;
+  }
+
+  .alert-card {
+    padding: 10px;
+  }
+
+  .alert-card img {
+    max-width: 100%;
+  }
+}
+
+header a {
+  display: flex;
+  align-items: center;
+  max-width: 55%;
+  text-decoration: none;
+  color: inherit;
+}
+
+
+/* -------------------- MOBILE: Reduce font size for names -------------------- */
+@media (max-width: 700px) {
+  .welcome-name {
+    font-size: 14px;     /* smaller text */
+    max-width: 140px;    /* prevents overflow */
+    overflow: hidden;
+    text-overflow: ellipsis;
+    white-space: nowrap;
+  }
+}
+
+
+@media (max-width: 480px) {
+  .logo-img {
+    height: 64px; /* shrink logo on mobile */
+  }
+
+  .profile-container {
+    max-width: 130px;
+    gap: 6px;
+  }
+
+  .username {
+    max-width: 80px;
+    font-size: 0.85rem;
+  }
+
+  .profile-photo {
+    width: 32px;
+    height: 32px;
+  }
 }

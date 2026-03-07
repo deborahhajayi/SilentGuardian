@@ -8,10 +8,17 @@ import random
 from datetime import datetime
 from flask_cors import CORS
 from uuid import uuid4
+from flask_bcrypt import Bcrypt
+from datetime import timedelta
+from functools import wraps
 
 app = Flask(__name__)
-app.secret_key = os.urandom(24)
+app.secret_key = "fall-detection-secret-key"
 CORS(app) 
+bcrypt = Bcrypt(app)
+
+# session expiry after certain timeline
+app.permanent_session_lifetime = timedelta(minutes=1)
 
 @app.route('/')
 def login():
@@ -22,18 +29,37 @@ def signUp():
 
     return render_template('signUp.html')
 
+def login_required(f):
+    @wraps(f)
+    def wrapper(*args, **kwargs):
+        if "email" not in session:
+            flash("Session expired. Please log in again.", "error")
+            return redirect('/')
+
+        return f(*args, **kwargs)
+    return wrapper
+
 @app.route('/home')
+@login_required
 def home():
-    fname = request.args.get('fname')
-    lname = request.args.get('lname')
-    email = request.args.get('email')
+    fname = session.get('fname')
+    lname = session.get('lname')
+    email = session.get('email')
 
     connection = sqlite3.connect('LoginData.db')
     cursor = connection.cursor()
     falls = cursor.execute(
-        "SELECT timestamp, location, image_path FROM FALL_EVENTS WHERE email=? ORDER BY timestamp DESC LIMIT 10",
+        """
+        SELECT id, timestamp, location, image_path, status
+        FROM FALL_EVENTS
+        WHERE email=?
+        ORDER BY timestamp DESC
+        LIMIT 15
+        """,
         (email,)
     ).fetchall()
+
+
     connection.close()
 
     return render_template(
@@ -43,21 +69,61 @@ def home():
         email=email,
         falls=falls
     )
-@app.route('/login_validation' ,methods=['POST'])
+
+@app.route("/mark_false_positive", methods=["POST"])
+def mark_false_positive():
+    event_id = request.form.get("event_id")
+    conn = sqlite3.connect("LoginData.db")
+    c = conn.cursor()
+    c.execute("UPDATE FALL_EVENTS SET status='false_alarm' WHERE id=?", (event_id,))
+    conn.commit()
+    conn.close()
+    return redirect(request.referrer or '/home')
+
+
+    
+
+
+@app.route('/login_validation', methods=['POST'])
 def login_validation():
     email = request.form.get('email')
     password = request.form.get('password')
 
-    connection = sqlite3.connect('LoginData.db')
-    cursor = connection.cursor()
+    if not email or not password:
+        flash("Please enter both email and password.", "error")
+        return redirect('/')
 
-    user = cursor.execute("SELECT * FROM USERS WHERE email=? and password=?",(email,password)).fetchall()
-    connection.close()
+    conn = sqlite3.connect('LoginData.db')
+    cursor = conn.cursor()
 
-    if(len(user)>0):
-        return redirect(f'/home?fname={user[0][0]}&lname={user[0][1]}&email={user[0][2]}')
-    else:
-        return redirect('/login')
+    user = cursor.execute(
+        "SELECT first_name, last_name, email, password_hash FROM USERS WHERE email=?",
+        (email,)
+    ).fetchone()
+
+    conn.close()
+
+    # ❌ Email not found
+    if user is None:
+        flash("Email does not match any account. Please register first.", "error")
+        return redirect('/signUp')
+
+    stored_hash = user[3]  # hashed password from DB
+
+    # ❌ Password incorrect
+    if not bcrypt.check_password_hash(stored_hash, password):
+        flash("Incorrect password. Please try again.", "error")
+        return redirect('/')
+
+    # ✅ Login success
+    session.permanent = True
+    session['email'] = user[2]
+    session['fname'] = user[0]
+    session['lname'] = user[1]
+
+    return redirect('/home')
+
+
     
 @app.route('/add_user', methods=['POST'])
 def add_user():
@@ -66,18 +132,45 @@ def add_user():
     email = request.form.get('email')
     password = request.form.get('password')
 
+    # ---- Validation ----
+    if not password:
+        flash("Password required")
+        return redirect("/signUp")
+
+    if not email:
+        flash("Email required")
+        return redirect("/signUp")
+
     connection = sqlite3.connect('LoginData.db')
     cursor = connection.cursor()
 
-    ans = cursor.execute("SELECT * from USERS where email=? AND password=?",(email,password)).fetchall()
-    if(len(ans)>0):
+    # ---- Check if user already exists (email ONLY) ----
+    existing_user = cursor.execute(
+        "SELECT 1 FROM USERS WHERE email = ?",
+        (email,)
+    ).fetchone()
+
+    if existing_user:
         connection.close()
-        return render_template('signUp.html',msg="user already exists")
-    else:
-        cursor.execute("INSERT INTO USERS(first_name,last_name,email,password)values(?,?,?,?)",(fname,lname,email,password))
-        connection.commit()
-        connection.close()
-        return render_template('login.html')
+        return render_template('signUp.html', msg="User already exists")
+
+    # ---- Hash password ----
+    pw_hash = bcrypt.generate_password_hash(password).decode('utf-8')
+
+    # ---- Insert new user ----
+    cursor.execute(
+        """
+        INSERT INTO USERS (first_name, last_name, email, password_hash)
+        VALUES (?, ?, ?, ?)
+        """,
+        (fname, lname, email, pw_hash)
+    )
+
+    connection.commit()
+    connection.close()
+
+    return render_template('login.html')
+    
 
 def generate_otp():
     """Generate a 6-digit OTP."""
@@ -203,7 +296,12 @@ def check_otp():
             user = cursor.execute("SELECT * from USERS where email=?",(logged_mail,)).fetchall()
             connection.commit()
             connection.close()
-            return redirect(f'/home?fname={user[0][0]}&lname={user[0][1]}&email={user[0][2]}')
+            session.permanent = True
+            session['email'] = user[0][2]
+            session['fname'] = user[0][0]
+            session['lname'] = user[0][1]
+            return redirect('/home')
+
         else:
             connection.close()
             return render_template('forgot-password.html', msg="Invalid OTP!")
@@ -211,11 +309,16 @@ def check_otp():
 @app.route('/logout')
 def logout():
     # Clear session data (if you use session later)
+    session.clear()
+    flash("You have been logged out.", "success")
     global logged_mail
     logged_mail = ""
     return redirect('/')
 
+
+
 @app.route('/profile')
+@login_required
 def profile():
     fname = request.args.get('fname')
     lname = request.args.get('lname')
@@ -223,6 +326,7 @@ def profile():
     return render_template('profile.html', fname=fname, lname=lname, email=email)
 
 ts = datetime.now().strftime('%Y-%m-%d %H:%M:%S')
+
 
 
 @app.route('/api/report_fall', methods=['POST'])
@@ -264,6 +368,35 @@ def report_fall():
     connection.close()
 
     return {"status": "ok", "image_path": image_path}, 200
+
+@app.route('/confirm_fall', methods=['POST'])
+def confirm_fall():
+    event_id = request.form.get('event_id')
+    connection = sqlite3.connect('LoginData.db')
+    cursor = connection.cursor()
+    cursor.execute("UPDATE FALL_EVENTS SET status='confirmed' WHERE id=?", (event_id,))
+    connection.commit()
+    connection.close()
+    return redirect(request.referrer or '/home')
+
+@app.route('/api/falls_latest')
+@login_required
+def falls_latest():
+    email = session['email']
+    conn = sqlite3.connect('LoginData.db')
+    cur = conn.cursor()
+    rows = cur.execute(
+        """SELECT id, timestamp, location, image_path, status
+           FROM FALL_EVENTS
+           WHERE email=?
+           ORDER BY timestamp DESC
+           LIMIT 15""",
+        (email,)
+    ).fetchall()
+    conn.close()
+
+    return {"falls": rows}
+
 
 if __name__ == '__main__':
     app.run(debug=True)
