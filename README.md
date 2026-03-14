@@ -1,4 +1,5 @@
 # SilentGuardian
+---
 SilentGurdian is a simple, smart safety system that quietly looks out for the people you care about most. Using AI, it can recognize when someone has fallen or when they make a hand gesture asking for help.
 
 ### Features
@@ -39,90 +40,12 @@ How to Run the Application
 The app will be available at:
 http://localhost:5000
 
-### Installation Guide for Raspberry Pi 
+## Running the Gesture Detection System on the Raspberry Pi
+---
 
-Step 0: Update the system 
-- sudo apt update
-- sudo apt upgrade -y
-
-Step 1: Install system dependencies
- - sudo apt install -y \
-   python3-pip \
-   python3-venv \
-   python3-dev \
-   libatlas-base-dev \
-   libjpeg-dev \
-   libpng-dev \
-   libopenjp2-7 \
-   libtiff6 \
-   libglib2.0-0 \
-   libstdc++6
-
-Step 2: Create a virtual environment 
-- python3 -m venv --system-site-packages <"virtual_preferred_name">
-- source <"virtual_preferred_name">/bin/activate
-
-Step 3: Upgrade pip & tooling
-- pip install --upgrade pip setuptools wheel
-
-Step 4: Install Numpy 
-- pip install “numpy>=1.24.0”
-
-Step 5: Install OpenCV (Headless Version)
-- pip install “opencv-python-headless>=4.8.0”
-
-Step 6: Install TensorFlow Lite runtime 
-- pip install tflite-runtime
-
-Step 7: Install picamera2 (Global Installation)
-- This is done globally not within a virtual environment
-- pip install picamera2
-
-Step 8: Install Flask
-- pip install Flask
-
-Camera Configuration
-- The IMX708 camera required specific configuration steps to operate correctly. These steps can be implemented by using this [Arducam IMX708 Raspberry Pi Camera Docs](https://docs.arducam.com/Raspberry-Pi-Camera/Native-camera/12MP-IMX708/#raspberry-pi-compute-module-3-4-cm3cm4)
-
-File Transfer
-- Integrated using a user tool named gdown.
-
-Step 1: Install gdown (Global Installation)
-- python3 -m pip install --user gdown 
-
-Step 2: Download shared files
-- gdown <"LINK_SHARING_ID"> -O <"script_name">
-
-Step 3: Verify file type
-- file <"script_name">
-
-### Running the Raspberry Pi on Headless Mode
-To operate the Raspberry Pi without a monitor, SSH must be enabled.
-
-Step 1: Create the required files
-- Open the boot partition
-- Create these files:
-  - ssh and wpa_supplicant.conf
-- Insert this prompt inside the wpa_supplicant.conf file:
-  country=CA
-  ctrl_interface=DIR=/var/run/wpa_supplicant GROUP=netdev
-  update_config=1
-
-  network={
-    ssid="YOUR_HOTSPOT_NAME"
-    psk="YOUR_HOTSPOT_PASSOWRD"
-    key_mgmt=WPA_PSK
-  }
-  Note: If connecting using a different user credential, the key_mgmt is removed. This is due to the fact that the first credential created on first boot is still there. 
-
-Step 2: Insert SD card into Pi
-- Ensure the hotspot is on
-- Insert the SD card 
-- Power on the Pi
-  - This leads to an auto connect between the Pi and the device. 
-
-Step 3: SSH from windows
-- Open powershell:
-  - ssh <"raspberrypi_username">@ipaddress
-
-### Running the Script for gesture Detection 
+## Contributors & Support 
+---
+- Deborah Ajayi
+- Anique Ali
+- Kamsiyochukwu Ekweozor 
+- Jennifer Ogidi-Gbegbaje 
