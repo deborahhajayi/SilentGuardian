@@ -1,38 +1,213 @@
 <!DOCTYPE html>
-<html lang="en">
+<html>
 <head>
-  <meta charset="utf-8" />
-  <meta name="viewport" content="width=device-width, initial-scale=1" />
-  <title>Profile</title>
-  <link rel="stylesheet" href="{{ url_for('static', filename='profile.css') }}">
+<title>SilentGuardian Account</title>
+<link rel="stylesheet" href="{{ url_for('static', filename='profile.css') }}">
 </head>
+
 <body>
-  <header>
-    <!-- clickable home SVG — goes back to /home with user query params -->
-    <a href="/home?fname={{ fname }}&lname={{ lname }}&email={{ email }}" class="home-link" aria-label="Back to home">
-      <span class="home-icon" aria-hidden="true">
-        <!-- <<< inline SVG you provided (kept exactly) >>> -->
-        <svg viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg" stroke="#000000" stroke-width="1.968"><g id="SVGRepo_bgCarrier" stroke-width="0"></g><g id="SVGRepo_tracerCarrier" stroke-linecap="round" stroke-linejoin="round"></g><g id="SVGRepo_iconCarrier"><path d="M9 20H7C5.89543 20 5 19.1046 5 18V10.9199C5 10.336 5.25513 9.78132 5.69842 9.40136L10.6984 5.11564C11.4474 4.47366 12.5526 4.47366 13.3016 5.11564L18.3016 9.40136C18.7449 9.78132 19 10.336 19 10.9199V18C19 19.1046 18.1046 20 17 20H15M9 20V14C9 13.4477 9.44772 13 10 13H14C14.5523 13 15 13.4477 15 14V20M9 20H15" stroke="#111111" stroke-linecap="round" stroke-linejoin="round"></path></g></svg>
-          <g fill="#a36fe2">
-            <path d="M299.875,576.21213 C299.875,576.76413 299.399,577.00013 298.8125,577.00013 L297.75,577.00013 C297.1635,577.00013 296.6875,576.76413 296.6875,576.21213 L296.6875,575.21213 C296.6875,574.10713 295.736562,573.00013 294.5625,573.00013 L292.4375,573.00013 C291.263438,573.00013 290.3125,574.10713 290.3125,575.21213 L290.3125,576.21213 C290.3125,576.76413 289.8365,577.00013 289.25,577.00013 L288.1875,577.00013 C287.601,577.00013 287.125,576.76413 287.125,576.21213 L287.125,568.14913 C287.125,568.01613 287.181312,567.88913 287.280125,567.79513 L292.738188,562.65913 C293.153625,562.26813 293.826188,562.26813 294.240563,562.65913 L299.719875,567.81513 C299.818688,567.90913 299.875,568.03613 299.875,568.16813 L299.875,576.21213 Z M302,567.62513 C302,567.36013 301.888438,567.10713 301.690812,566.91913 L294.998125,560.58913 C294.169375,559.80613 292.823188,559.80313 291.99125,560.58313 L285.312375,566.84813 C285.112625,567.03613 285,567.29013 285,567.55613 L285,577.21213 C285,578.31713 285.950938,579.00013 287.125,579.00013 L290.3125,579.00013 C291.486562,579.00013 292.4375,578.31713 292.4375,577.21213 L292.4375,576.21213 C292.4375,575.66013 292.9135,575.21213 293.5,575.21213 C294.0865,575.21213 294.5625,575.66013 294.5625,576.21213 L294.5625,577.21213 C294.5625,578.31713 295.513438,579.00013 296.6875,579.00013 L299.875,579.00013 C301.049062,579.00013 302,578.31713 302,577.21213 L302,567.62513 Z" />
-          </g>
-        </svg>
-      </span>
+
+<div class="topbar">
+
+  <div class="logo">
+    <a href="/home">
+    <img src="{{ url_for('static', filename='images/sgl5.png') }}" class="logo-img">
+    </a>
+  </div>
+
+  <div class="top-right">
+
+    <a href="/home" class="dashboard-btn">
+
+    <!-- INSERT DASHBOARD SVG HERE -->
+     <svg fill="#000000" height="200px" width="200px" version="1.1" id="Layer_1" xmlns="http://www.w3.org/2000/svg" xmlns:xlink="http://www.w3.org/1999/xlink" viewBox="0 0 496.385 496.385" xml:space="preserve" stroke="#000000" stroke-width="23.330094999999996"><g id="SVGRepo_bgCarrier" stroke-width="0"></g><g id="SVGRepo_tracerCarrier" stroke-linecap="round" stroke-linejoin="round"></g><g id="SVGRepo_iconCarrier"> <g> <g> <path d="M229.553,141.702V18.639L0,248.192l229.553,229.553V354.688h266.832V141.702H229.553z M476.692,334.995H209.861v95.212 L27.846,248.192L209.861,66.178v95.216h266.832V334.995z"></path> </g> </g> </g></svg>
+
     </a>
 
-    <h1>User Profile</h1>
-  </header>
+  </div>
 
-  <main>
-    <div class="profile-info">
-      <p><strong>First Name:</strong> {{ fname }}</p>
-      <p><strong>Last Name:</strong> {{ lname }}</p>
-      <p><strong>Email:</strong> {{ email }}</p>
+</div>
+
+<div class="container">
+
+<!-- LEFT MENU -->
+<div class="sidebar">
+
+    <div class="menu-item active" onclick="showSection('home', this)">
+
+        <span class="icon">
+            <!-- INSERT HOME SVG HERE -->
+             <svg viewBox="0 0 192 192" xmlns="http://www.w3.org/2000/svg" xml:space="preserve" id="svg1011" fill="none" version="1.1"><g id="SVGRepo_bgCarrier" stroke-width="0"></g><g id="SVGRepo_tracerCarrier" stroke-linecap="round" stroke-linejoin="round"></g><g id="SVGRepo_iconCarrier"><defs id="defs1009"><filter id="mask-powermask-path-effect5363_inverse" width="100" height="100" x="-50" y="-50" style="color-interpolation-filters:sRGB"><feColorMatrix id="mask-powermask-path-effect5363_primitive1" result="fbSourceGraphic" type="saturate" values="1"></feColorMatrix><feColorMatrix id="mask-powermask-path-effect5363_primitive2" in="fbSourceGraphic" values="-1 0 0 0 1 0 -1 0 0 1 0 0 -1 0 1 0 0 0 1 0"></feColorMatrix></filter><filter id="mask-powermask-path-effect5414_inverse" width="100" height="100" x="-50" y="-50" style="color-interpolation-filters:sRGB"><feColorMatrix id="mask-powermask-path-effect5414_primitive1" result="fbSourceGraphic" type="saturate" values="1"></feColorMatrix><feColorMatrix id="mask-powermask-path-effect5414_primitive2" in="fbSourceGraphic" values="-1 0 0 0 1 0 -1 0 0 1 0 0 -1 0 1 0 0 0 1 0"></feColorMatrix></filter><filter id="mask-powermask-path-effect5444_inverse" width="100" height="100" x="-50" y="-50" style="color-interpolation-filters:sRGB"><feColorMatrix id="mask-powermask-path-effect5444_primitive1" result="fbSourceGraphic" type="saturate" values="1"></feColorMatrix><feColorMatrix id="mask-powermask-path-effect5444_primitive2" in="fbSourceGraphic" values="-1 0 0 0 1 0 -1 0 0 1 0 0 -1 0 1 0 0 0 1 0"></feColorMatrix></filter><filter id="mask-powermask-path-effect5462_inverse" width="100" height="100" x="-50" y="-50" style="color-interpolation-filters:sRGB"><feColorMatrix id="mask-powermask-path-effect5462_primitive1" result="fbSourceGraphic" type="saturate" values="1"></feColorMatrix><feColorMatrix id="mask-powermask-path-effect5462_primitive2" in="fbSourceGraphic" values="-1 0 0 0 1 0 -1 0 0 1 0 0 -1 0 1 0 0 0 1 0"></feColorMatrix></filter><filter id="mask-powermask-path-effect5473_inverse" width="100" height="100" x="-50" y="-50" style="color-interpolation-filters:sRGB"><feColorMatrix id="mask-powermask-path-effect5473_primitive1" result="fbSourceGraphic" type="saturate" values="1"></feColorMatrix><feColorMatrix id="mask-powermask-path-effect5473_primitive2" in="fbSourceGraphic" values="-1 0 0 0 1 0 -1 0 0 1 0 0 -1 0 1 0 0 0 1 0"></feColorMatrix></filter><filter id="mask-powermask-path-effect7499_inverse" width="100" height="100" x="-50" y="-50" style="color-interpolation-filters:sRGB"><feColorMatrix id="mask-powermask-path-effect7499_primitive1" result="fbSourceGraphic" type="saturate" values="1"></feColorMatrix><feColorMatrix id="mask-powermask-path-effect7499_primitive2" in="fbSourceGraphic" values="-1 0 0 0 1 0 -1 0 0 1 0 0 -1 0 1 0 0 0 1 0"></feColorMatrix></filter><filter id="mask-powermask-path-effect7510_inverse" width="100" height="100" x="-50" y="-50" style="color-interpolation-filters:sRGB"><feColorMatrix id="mask-powermask-path-effect7510_primitive1" result="fbSourceGraphic" type="saturate" values="1"></feColorMatrix><feColorMatrix id="mask-powermask-path-effect7510_primitive2" in="fbSourceGraphic" values="-1 0 0 0 1 0 -1 0 0 1 0 0 -1 0 1 0 0 0 1 0"></feColorMatrix></filter><filter id="mask-powermask-path-effect5363_inverse-3" width="100" height="100" x="-50" y="-50" style="color-interpolation-filters:sRGB"><feColorMatrix id="mask-powermask-path-effect5363_primitive1-8" result="fbSourceGraphic" type="saturate" values="1"></feColorMatrix><feColorMatrix id="mask-powermask-path-effect5363_primitive2-0" in="fbSourceGraphic" values="-1 0 0 0 1 0 -1 0 0 1 0 0 -1 0 1 0 0 0 1 0"></feColorMatrix></filter><filter id="mask-powermask-path-effect5414_inverse-1" width="100" height="100" x="-50" y="-50" style="color-interpolation-filters:sRGB"><feColorMatrix id="mask-powermask-path-effect5414_primitive1-5" result="fbSourceGraphic" type="saturate" values="1"></feColorMatrix><feColorMatrix id="mask-powermask-path-effect5414_primitive2-0" in="fbSourceGraphic" values="-1 0 0 0 1 0 -1 0 0 1 0 0 -1 0 1 0 0 0 1 0"></feColorMatrix></filter><filter id="mask-powermask-path-effect5444_inverse-8" width="100" height="100" x="-50" y="-50" style="color-interpolation-filters:sRGB"><feColorMatrix id="mask-powermask-path-effect5444_primitive1-0" result="fbSourceGraphic" type="saturate" values="1"></feColorMatrix><feColorMatrix id="mask-powermask-path-effect5444_primitive2-7" in="fbSourceGraphic" values="-1 0 0 0 1 0 -1 0 0 1 0 0 -1 0 1 0 0 0 1 0"></feColorMatrix></filter><filter id="mask-powermask-path-effect5462_inverse-6" width="100" height="100" x="-50" y="-50" style="color-interpolation-filters:sRGB"><feColorMatrix id="mask-powermask-path-effect5462_primitive1-1" result="fbSourceGraphic" type="saturate" values="1"></feColorMatrix><feColorMatrix id="mask-powermask-path-effect5462_primitive2-5" in="fbSourceGraphic" values="-1 0 0 0 1 0 -1 0 0 1 0 0 -1 0 1 0 0 0 1 0"></feColorMatrix></filter><filter id="mask-powermask-path-effect5473_inverse-5" width="100" height="100" x="-50" y="-50" style="color-interpolation-filters:sRGB"><feColorMatrix id="mask-powermask-path-effect5473_primitive1-3" result="fbSourceGraphic" type="saturate" values="1"></feColorMatrix><feColorMatrix id="mask-powermask-path-effect5473_primitive2-5" in="fbSourceGraphic" values="-1 0 0 0 1 0 -1 0 0 1 0 0 -1 0 1 0 0 0 1 0"></feColorMatrix></filter><filter id="mask-powermask-path-effect7499_inverse-3" width="100" height="100" x="-50" y="-50" style="color-interpolation-filters:sRGB"><feColorMatrix id="mask-powermask-path-effect7499_primitive1-5" result="fbSourceGraphic" type="saturate" values="1"></feColorMatrix><feColorMatrix id="mask-powermask-path-effect7499_primitive2-1" in="fbSourceGraphic" values="-1 0 0 0 1 0 -1 0 0 1 0 0 -1 0 1 0 0 0 1 0"></feColorMatrix></filter><filter id="mask-powermask-path-effect7510_inverse-0" width="100" height="100" x="-50" y="-50" style="color-interpolation-filters:sRGB"><feColorMatrix id="mask-powermask-path-effect7510_primitive1-6" result="fbSourceGraphic" type="saturate" values="1"></feColorMatrix><feColorMatrix id="mask-powermask-path-effect7510_primitive2-1" in="fbSourceGraphic" values="-1 0 0 0 1 0 -1 0 0 1 0 0 -1 0 1 0 0 0 1 0"></feColorMatrix></filter><filter id="filter0_d" width="61.288" height="67.596" x="10.75" y="8.779" color-interpolation-filters="sRGB" filterUnits="userSpaceOnUse"><feFlood id="feFlood3303" flood-opacity="0" result="BackgroundImageFix"></feFlood><feColorMatrix id="feColorMatrix3305" in="SourceAlpha" type="matrix" values="0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 127 0"></feColorMatrix><feOffset id="feOffset3307"></feOffset><feGaussianBlur id="feGaussianBlur3309" stdDeviation="10"></feGaussianBlur><feColorMatrix id="feColorMatrix3311" type="matrix" values="0 0 0 0 0.330556 0 0 0 0 0.398611 0 0 0 0 0.495833 0 0 0 0.32 0"></feColorMatrix><feBlend id="feBlend3313" in2="BackgroundImageFix" mode="normal" result="effect1_dropShadow"></feBlend><feBlend id="feBlend3315" in="SourceGraphic" in2="effect1_dropShadow" mode="normal" result="shape"></feBlend></filter><filter id="mask-powermask-path-effect5363_inverse-7" width="100" height="100" x="-50" y="-50" style="color-interpolation-filters:sRGB"><feColorMatrix id="mask-powermask-path-effect5363_primitive1-3" result="fbSourceGraphic" type="saturate" values="1"></feColorMatrix><feColorMatrix id="mask-powermask-path-effect5363_primitive2-2" in="fbSourceGraphic" values="-1 0 0 0 1 0 -1 0 0 1 0 0 -1 0 1 0 0 0 1 0"></feColorMatrix></filter><filter id="mask-powermask-path-effect5414_inverse-9" width="100" height="100" x="-50" y="-50" style="color-interpolation-filters:sRGB"><feColorMatrix id="mask-powermask-path-effect5414_primitive1-6" result="fbSourceGraphic" type="saturate" values="1"></feColorMatrix><feColorMatrix id="mask-powermask-path-effect5414_primitive2-5" in="fbSourceGraphic" values="-1 0 0 0 1 0 -1 0 0 1 0 0 -1 0 1 0 0 0 1 0"></feColorMatrix></filter><filter id="mask-powermask-path-effect5444_inverse-3" width="100" height="100" x="-50" y="-50" style="color-interpolation-filters:sRGB"><feColorMatrix id="mask-powermask-path-effect5444_primitive1-7" result="fbSourceGraphic" type="saturate" values="1"></feColorMatrix><feColorMatrix id="mask-powermask-path-effect5444_primitive2-6" in="fbSourceGraphic" values="-1 0 0 0 1 0 -1 0 0 1 0 0 -1 0 1 0 0 0 1 0"></feColorMatrix></filter><filter id="mask-powermask-path-effect5462_inverse-61" width="100" height="100" x="-50" y="-50" style="color-interpolation-filters:sRGB"><feColorMatrix id="mask-powermask-path-effect5462_primitive1-0" result="fbSourceGraphic" type="saturate" values="1"></feColorMatrix><feColorMatrix id="mask-powermask-path-effect5462_primitive2-8" in="fbSourceGraphic" values="-1 0 0 0 1 0 -1 0 0 1 0 0 -1 0 1 0 0 0 1 0"></feColorMatrix></filter><filter id="mask-powermask-path-effect5473_inverse-4" width="100" height="100" x="-50" y="-50" style="color-interpolation-filters:sRGB"><feColorMatrix id="mask-powermask-path-effect5473_primitive1-38" result="fbSourceGraphic" type="saturate" values="1"></feColorMatrix><feColorMatrix id="mask-powermask-path-effect5473_primitive2-6" in="fbSourceGraphic" values="-1 0 0 0 1 0 -1 0 0 1 0 0 -1 0 1 0 0 0 1 0"></feColorMatrix></filter><filter id="mask-powermask-path-effect7499_inverse-2" width="100" height="100" x="-50" y="-50" style="color-interpolation-filters:sRGB"><feColorMatrix id="mask-powermask-path-effect7499_primitive1-3" result="fbSourceGraphic" type="saturate" values="1"></feColorMatrix><feColorMatrix id="mask-powermask-path-effect7499_primitive2-8" in="fbSourceGraphic" values="-1 0 0 0 1 0 -1 0 0 1 0 0 -1 0 1 0 0 0 1 0"></feColorMatrix></filter><filter id="mask-powermask-path-effect7510_inverse-3" width="100" height="100" x="-50" y="-50" style="color-interpolation-filters:sRGB"><feColorMatrix id="mask-powermask-path-effect7510_primitive1-2" result="fbSourceGraphic" type="saturate" values="1"></feColorMatrix><feColorMatrix id="mask-powermask-path-effect7510_primitive2-7" in="fbSourceGraphic" values="-1 0 0 0 1 0 -1 0 0 1 0 0 -1 0 1 0 0 0 1 0"></feColorMatrix></filter><filter id="filter0_d-9" width="61.288" height="67.596" x="10.75" y="8.779" color-interpolation-filters="sRGB" filterUnits="userSpaceOnUse"><feFlood id="feFlood3303-4" flood-opacity="0" result="BackgroundImageFix"></feFlood><feColorMatrix id="feColorMatrix3305-4" in="SourceAlpha" type="matrix" values="0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 127 0"></feColorMatrix><feOffset id="feOffset3307-0"></feOffset><feGaussianBlur id="feGaussianBlur3309-2" stdDeviation="10"></feGaussianBlur><feColorMatrix id="feColorMatrix3311-8" type="matrix" values="0 0 0 0 0.330556 0 0 0 0 0.398611 0 0 0 0 0.495833 0 0 0 0.32 0"></feColorMatrix><feBlend id="feBlend3313-6" in2="BackgroundImageFix" mode="normal" result="effect1_dropShadow"></feBlend><feBlend id="feBlend3315-3" in="SourceGraphic" in2="effect1_dropShadow" mode="normal" result="shape"></feBlend></filter><filter id="mask-powermask-path-effect5363_inverse-2" width="100" height="100" x="-50" y="-50" style="color-interpolation-filters:sRGB"><feColorMatrix id="mask-powermask-path-effect5363_primitive1-2" result="fbSourceGraphic" type="saturate" values="1"></feColorMatrix><feColorMatrix id="mask-powermask-path-effect5363_primitive2-8" in="fbSourceGraphic" values="-1 0 0 0 1 0 -1 0 0 1 0 0 -1 0 1 0 0 0 1 0"></feColorMatrix></filter><filter id="mask-powermask-path-effect5414_inverse-3" width="100" height="100" x="-50" y="-50" style="color-interpolation-filters:sRGB"><feColorMatrix id="mask-powermask-path-effect5414_primitive1-8" result="fbSourceGraphic" type="saturate" values="1"></feColorMatrix><feColorMatrix id="mask-powermask-path-effect5414_primitive2-1" in="fbSourceGraphic" values="-1 0 0 0 1 0 -1 0 0 1 0 0 -1 0 1 0 0 0 1 0"></feColorMatrix></filter><filter id="mask-powermask-path-effect5444_inverse-2" width="100" height="100" x="-50" y="-50" style="color-interpolation-filters:sRGB"><feColorMatrix id="mask-powermask-path-effect5444_primitive1-6" result="fbSourceGraphic" type="saturate" values="1"></feColorMatrix><feColorMatrix id="mask-powermask-path-effect5444_primitive2-4" in="fbSourceGraphic" values="-1 0 0 0 1 0 -1 0 0 1 0 0 -1 0 1 0 0 0 1 0"></feColorMatrix></filter><filter id="mask-powermask-path-effect5462_inverse-1" width="100" height="100" x="-50" y="-50" style="color-interpolation-filters:sRGB"><feColorMatrix id="mask-powermask-path-effect5462_primitive1-10" result="fbSourceGraphic" type="saturate" values="1"></feColorMatrix><feColorMatrix id="mask-powermask-path-effect5462_primitive2-0" in="fbSourceGraphic" values="-1 0 0 0 1 0 -1 0 0 1 0 0 -1 0 1 0 0 0 1 0"></feColorMatrix></filter><filter id="mask-powermask-path-effect5473_inverse-1" width="100" height="100" x="-50" y="-50" style="color-interpolation-filters:sRGB"><feColorMatrix id="mask-powermask-path-effect5473_primitive1-1" result="fbSourceGraphic" type="saturate" values="1"></feColorMatrix><feColorMatrix id="mask-powermask-path-effect5473_primitive2-7" in="fbSourceGraphic" values="-1 0 0 0 1 0 -1 0 0 1 0 0 -1 0 1 0 0 0 1 0"></feColorMatrix></filter><filter id="mask-powermask-path-effect7499_inverse-1" width="100" height="100" x="-50" y="-50" style="color-interpolation-filters:sRGB"><feColorMatrix id="mask-powermask-path-effect7499_primitive1-53" result="fbSourceGraphic" type="saturate" values="1"></feColorMatrix><feColorMatrix id="mask-powermask-path-effect7499_primitive2-7" in="fbSourceGraphic" values="-1 0 0 0 1 0 -1 0 0 1 0 0 -1 0 1 0 0 0 1 0"></feColorMatrix></filter><filter id="mask-powermask-path-effect7510_inverse-1" width="100" height="100" x="-50" y="-50" style="color-interpolation-filters:sRGB"><feColorMatrix id="mask-powermask-path-effect7510_primitive1-7" result="fbSourceGraphic" type="saturate" values="1"></feColorMatrix><feColorMatrix id="mask-powermask-path-effect7510_primitive2-3" in="fbSourceGraphic" values="-1 0 0 0 1 0 -1 0 0 1 0 0 -1 0 1 0 0 0 1 0"></feColorMatrix></filter><filter id="filter0_d-0" width="61.288" height="67.596" x="10.75" y="8.779" color-interpolation-filters="sRGB" filterUnits="userSpaceOnUse"><feFlood id="feFlood3303-0" flood-opacity="0" result="BackgroundImageFix"></feFlood><feColorMatrix id="feColorMatrix3305-0" in="SourceAlpha" type="matrix" values="0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 127 0"></feColorMatrix><feOffset id="feOffset3307-7"></feOffset><feGaussianBlur id="feGaussianBlur3309-5" stdDeviation="10"></feGaussianBlur><feColorMatrix id="feColorMatrix3311-2" type="matrix" values="0 0 0 0 0.330556 0 0 0 0 0.398611 0 0 0 0 0.495833 0 0 0 0.32 0"></feColorMatrix><feBlend id="feBlend3313-4" in2="BackgroundImageFix" mode="normal" result="effect1_dropShadow"></feBlend><feBlend id="feBlend3315-4" in="SourceGraphic" in2="effect1_dropShadow" mode="normal" result="shape"></feBlend></filter><filter id="mask-powermask-path-effect5363_inverse-1" width="100" height="100" x="-50" y="-50" style="color-interpolation-filters:sRGB"><feColorMatrix id="mask-powermask-path-effect5363_primitive1-5" result="fbSourceGraphic" type="saturate" values="1"></feColorMatrix><feColorMatrix id="mask-powermask-path-effect5363_primitive2-6" in="fbSourceGraphic" values="-1 0 0 0 1 0 -1 0 0 1 0 0 -1 0 1 0 0 0 1 0"></feColorMatrix></filter><filter id="mask-powermask-path-effect5414_inverse-2" width="100" height="100" x="-50" y="-50" style="color-interpolation-filters:sRGB"><feColorMatrix id="mask-powermask-path-effect5414_primitive1-67" result="fbSourceGraphic" type="saturate" values="1"></feColorMatrix><feColorMatrix id="mask-powermask-path-effect5414_primitive2-4" in="fbSourceGraphic" values="-1 0 0 0 1 0 -1 0 0 1 0 0 -1 0 1 0 0 0 1 0"></feColorMatrix></filter><filter id="mask-powermask-path-effect5444_inverse-86" width="100" height="100" x="-50" y="-50" style="color-interpolation-filters:sRGB"><feColorMatrix id="mask-powermask-path-effect5444_primitive1-71" result="fbSourceGraphic" type="saturate" values="1"></feColorMatrix><feColorMatrix id="mask-powermask-path-effect5444_primitive2-2" in="fbSourceGraphic" values="-1 0 0 0 1 0 -1 0 0 1 0 0 -1 0 1 0 0 0 1 0"></feColorMatrix></filter><filter id="mask-powermask-path-effect5462_inverse-3" width="100" height="100" x="-50" y="-50" style="color-interpolation-filters:sRGB"><feColorMatrix id="mask-powermask-path-effect5462_primitive1-3" result="fbSourceGraphic" type="saturate" values="1"></feColorMatrix><feColorMatrix id="mask-powermask-path-effect5462_primitive2-7" in="fbSourceGraphic" values="-1 0 0 0 1 0 -1 0 0 1 0 0 -1 0 1 0 0 0 1 0"></feColorMatrix></filter><filter id="mask-powermask-path-effect5473_inverse-2" width="100" height="100" x="-50" y="-50" style="color-interpolation-filters:sRGB"><feColorMatrix id="mask-powermask-path-effect5473_primitive1-0" result="fbSourceGraphic" type="saturate" values="1"></feColorMatrix><feColorMatrix id="mask-powermask-path-effect5473_primitive2-1" in="fbSourceGraphic" values="-1 0 0 0 1 0 -1 0 0 1 0 0 -1 0 1 0 0 0 1 0"></feColorMatrix></filter><filter id="mask-powermask-path-effect7499_inverse-6" width="100" height="100" x="-50" y="-50" style="color-interpolation-filters:sRGB"><feColorMatrix id="mask-powermask-path-effect7499_primitive1-6" result="fbSourceGraphic" type="saturate" values="1"></feColorMatrix><feColorMatrix id="mask-powermask-path-effect7499_primitive2-4" in="fbSourceGraphic" values="-1 0 0 0 1 0 -1 0 0 1 0 0 -1 0 1 0 0 0 1 0"></feColorMatrix></filter><filter id="mask-powermask-path-effect7510_inverse-8" width="100" height="100" x="-50" y="-50" style="color-interpolation-filters:sRGB"><feColorMatrix id="mask-powermask-path-effect7510_primitive1-61" result="fbSourceGraphic" type="saturate" values="1"></feColorMatrix><feColorMatrix id="mask-powermask-path-effect7510_primitive2-34" in="fbSourceGraphic" values="-1 0 0 0 1 0 -1 0 0 1 0 0 -1 0 1 0 0 0 1 0"></feColorMatrix></filter><filter id="filter0_d-2" width="61.288" height="67.596" x="10.75" y="8.779" color-interpolation-filters="sRGB" filterUnits="userSpaceOnUse"><feFlood id="feFlood3303-8" flood-opacity="0" result="BackgroundImageFix"></feFlood><feColorMatrix id="feColorMatrix3305-1" in="SourceAlpha" type="matrix" values="0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 127 0"></feColorMatrix><feOffset id="feOffset3307-2"></feOffset><feGaussianBlur id="feGaussianBlur3309-55" stdDeviation="10"></feGaussianBlur><feColorMatrix id="feColorMatrix3311-7" type="matrix" values="0 0 0 0 0.330556 0 0 0 0 0.398611 0 0 0 0 0.495833 0 0 0 0.32 0"></feColorMatrix><feBlend id="feBlend3313-7" in2="BackgroundImageFix" mode="normal" result="effect1_dropShadow"></feBlend><feBlend id="feBlend3315-5" in="SourceGraphic" in2="effect1_dropShadow" mode="normal" result="shape"></feBlend></filter><clipPath id="a"><path id="path1006" fill="#ffffff" d="M0 0h192v192H0z"></path></clipPath><clipPath id="clipPath7516" clipPathUnits="userSpaceOnUse"><path id="path7518" fill="#ffffff" d="M18.79 67.427a5.31 5.31 0 0 1-4.034-5.146V33.623c0-2.763 2.61-4.789 5.304-4.116l17.054 4.26a5.31 5.31 0 0 1 4.033 5.146V67.57c0 2.762-2.61 4.789-5.304 4.116z" style="display:block;fill:#ffffff;fill-opacity:1;stroke:none;stroke-width:4.4;stroke-dasharray:none;stroke-opacity:1"></path></clipPath><clipPath id="clipPath7528" clipPathUnits="userSpaceOnUse"><path id="path7530" fill="#ffffff" d="M34.838 60.83a5.31 5.31 0 0 1-4.033-5.147V27.026c0-2.763 2.61-4.79 5.303-4.117l17.054 4.26a5.31 5.31 0 0 1 4.034 5.146v28.658c0 2.763-2.61 4.79-5.304 4.116z" style="display:block;fill:#ffffff;fill-opacity:1;stroke:none;stroke-width:4.4;stroke-dasharray:none;stroke-opacity:1"></path></clipPath><clipPath id="a-4"><path id="path1006-0" fill="#ffffff" d="M0 0h192v192H0z"></path></clipPath><clipPath id="clipPath7516-8" clipPathUnits="userSpaceOnUse"><path id="path7518-9" fill="#ffffff" d="M18.79 67.427a5.31 5.31 0 0 1-4.034-5.146V33.623c0-2.763 2.61-4.789 5.304-4.116l17.054 4.26a5.31 5.31 0 0 1 4.033 5.146V67.57c0 2.762-2.61 4.789-5.304 4.116z" style="display:block;fill:#ffffff;fill-opacity:1;stroke:none;stroke-width:4.4;stroke-dasharray:none;stroke-opacity:1"></path></clipPath><clipPath id="clipPath7528-8" clipPathUnits="userSpaceOnUse"><path id="path7530-4" fill="#ffffff" d="M34.838 60.83a5.31 5.31 0 0 1-4.033-5.147V27.026c0-2.763 2.61-4.79 5.303-4.117l17.054 4.26a5.31 5.31 0 0 1 4.034 5.146v28.658c0 2.763-2.61 4.79-5.304 4.116z" style="display:block;fill:#ffffff;fill-opacity:1;stroke:none;stroke-width:4.4;stroke-dasharray:none;stroke-opacity:1"></path></clipPath><clipPath id="a-2"><path id="path1006-9" fill="#ffffff" d="M0 0h192v192H0z"></path></clipPath><clipPath id="clipPath7516-0" clipPathUnits="userSpaceOnUse"><path id="path7518-8" fill="#ffffff" d="M18.79 67.427a5.31 5.31 0 0 1-4.034-5.146V33.623c0-2.763 2.61-4.789 5.304-4.116l17.054 4.26a5.31 5.31 0 0 1 4.033 5.146V67.57c0 2.762-2.61 4.789-5.304 4.116z" style="display:block;fill:#ffffff;fill-opacity:1;stroke:none;stroke-width:4.4;stroke-dasharray:none;stroke-opacity:1"></path></clipPath><clipPath id="clipPath7528-3" clipPathUnits="userSpaceOnUse"><path id="path7530-9" fill="#ffffff" d="M34.838 60.83a5.31 5.31 0 0 1-4.033-5.147V27.026c0-2.763 2.61-4.79 5.303-4.117l17.054 4.26a5.31 5.31 0 0 1 4.034 5.146v28.658c0 2.763-2.61 4.79-5.304 4.116z" style="display:block;fill:#ffffff;fill-opacity:1;stroke:none;stroke-width:4.4;stroke-dasharray:none;stroke-opacity:1"></path></clipPath><clipPath id="a-6"><path id="path1006-6" fill="#ffffff" d="M0 0h192v192H0z"></path></clipPath><clipPath id="clipPath7516-08" clipPathUnits="userSpaceOnUse"><path id="path7518-0" fill="#ffffff" d="M18.79 67.427a5.31 5.31 0 0 1-4.034-5.146V33.623c0-2.763 2.61-4.789 5.304-4.116l17.054 4.26a5.31 5.31 0 0 1 4.033 5.146V67.57c0 2.762-2.61 4.789-5.304 4.116z" style="display:block;fill:#ffffff;fill-opacity:1;stroke:none;stroke-width:4.4;stroke-dasharray:none;stroke-opacity:1"></path></clipPath><clipPath id="clipPath7528-5" clipPathUnits="userSpaceOnUse"><path id="path7530-1" fill="#ffffff" d="M34.838 60.83a5.31 5.31 0 0 1-4.033-5.147V27.026c0-2.763 2.61-4.79 5.303-4.117l17.054 4.26a5.31 5.31 0 0 1 4.034 5.146v28.658c0 2.763-2.61 4.79-5.304 4.116z" style="display:block;fill:#ffffff;fill-opacity:1;stroke:none;stroke-width:4.4;stroke-dasharray:none;stroke-opacity:1"></path></clipPath><clipPath id="a-3"><path id="path1006-3" fill="#ffffff" d="M0 0h192v192H0z"></path></clipPath><clipPath id="clipPath7516-4" clipPathUnits="userSpaceOnUse"><path id="path7518-6" fill="#ffffff" d="M18.79 67.427a5.31 5.31 0 0 1-4.034-5.146V33.623c0-2.763 2.61-4.789 5.304-4.116l17.054 4.26a5.31 5.31 0 0 1 4.033 5.146V67.57c0 2.762-2.61 4.789-5.304 4.116z" style="display:block;fill:#ffffff;fill-opacity:1;stroke:none;stroke-width:4.4;stroke-dasharray:none;stroke-opacity:1"></path></clipPath><clipPath id="clipPath7528-1" clipPathUnits="userSpaceOnUse"><path id="path7530-16" fill="#ffffff" d="M34.838 60.83a5.31 5.31 0 0 1-4.033-5.147V27.026c0-2.763 2.61-4.79 5.303-4.117l17.054 4.26a5.31 5.31 0 0 1 4.034 5.146v28.658c0 2.763-2.61 4.79-5.304 4.116z" style="display:block;fill:#ffffff;fill-opacity:1;stroke:none;stroke-width:4.4;stroke-dasharray:none;stroke-opacity:1"></path></clipPath><radialGradient id="paint0_radial" cx="0" cy="0" r="1" gradientTransform="matrix(84.0465 0 0 84.2932 25.426 19.68)" gradientUnits="userSpaceOnUse"><stop id="stop3318" offset=".031" stop-color="#98C7FF"></stop><stop id="stop3320" offset=".469" stop-color="#1065E4"></stop><stop id="stop3322" offset="1" stop-color="#044AB1"></stop></radialGradient><radialGradient id="paint2_radial" cx="0" cy="0" r="1" gradientTransform="matrix(0 -44.5345 37.387 0 41.297 45.242)" gradientUnits="userSpaceOnUse"><stop id="stop3330" stop-color="#ffffff"></stop><stop id="stop3332" offset=".339" stop-color="#ffffff"></stop><stop id="stop3334" offset="1" stop-color="#ECF4FF"></stop></radialGradient><radialGradient id="paint3_radial" cx="0" cy="0" r="1" gradientTransform="matrix(0 -14.6613 14.7339 0 41.422 45.495)" gradientUnits="userSpaceOnUse"><stop id="stop3337" offset=".292" stop-color="#ffffff"></stop><stop id="stop3339" offset="1" stop-color="#F3F8FF"></stop></radialGradient><radialGradient id="paint0_radial-0" cx="0" cy="0" r="1" gradientTransform="matrix(84.0465 0 0 84.2932 25.426 19.68)" gradientUnits="userSpaceOnUse"><stop id="stop3318-7" offset=".031" stop-color="#98C7FF"></stop><stop id="stop3320-9" offset=".469" stop-color="#1065E4"></stop><stop id="stop3322-9" offset="1" stop-color="#044AB1"></stop></radialGradient><radialGradient id="paint2_radial-3" cx="0" cy="0" r="1" gradientTransform="matrix(0 -44.5345 37.387 0 41.297 45.242)" gradientUnits="userSpaceOnUse"><stop id="stop3330-4" stop-color="#ffffff"></stop><stop id="stop3332-1" offset=".339" stop-color="#ffffff"></stop><stop id="stop3334-2" offset="1" stop-color="#ECF4FF"></stop></radialGradient><radialGradient id="paint3_radial-0" cx="0" cy="0" r="1" gradientTransform="matrix(0 -14.6613 14.7339 0 41.422 45.495)" gradientUnits="userSpaceOnUse"><stop id="stop3337-8" offset=".292" stop-color="#ffffff"></stop><stop id="stop3339-6" offset="1" stop-color="#F3F8FF"></stop></radialGradient><radialGradient id="paint0_radial-1" cx="0" cy="0" r="1" gradientTransform="matrix(84.0465 0 0 84.2932 25.426 19.68)" gradientUnits="userSpaceOnUse"><stop id="stop3318-3" offset=".031" stop-color="#98C7FF"></stop><stop id="stop3320-0" offset=".469" stop-color="#1065E4"></stop><stop id="stop3322-4" offset="1" stop-color="#044AB1"></stop></radialGradient><radialGradient id="paint2_radial-9" cx="0" cy="0" r="1" gradientTransform="matrix(0 -44.5345 37.387 0 41.297 45.242)" gradientUnits="userSpaceOnUse"><stop id="stop3330-2" stop-color="#ffffff"></stop><stop id="stop3332-13" offset=".339" stop-color="#ffffff"></stop><stop id="stop3334-7" offset="1" stop-color="#ECF4FF"></stop></radialGradient><radialGradient id="paint3_radial-01" cx="0" cy="0" r="1" gradientTransform="matrix(0 -14.6613 14.7339 0 41.422 45.495)" gradientUnits="userSpaceOnUse"><stop id="stop3337-89" offset=".292" stop-color="#ffffff"></stop><stop id="stop3339-5" offset="1" stop-color="#F3F8FF"></stop></radialGradient><radialGradient id="paint0_radial-4" cx="0" cy="0" r="1" gradientTransform="matrix(84.0465 0 0 84.2932 25.426 19.68)" gradientUnits="userSpaceOnUse"><stop id="stop3318-5" offset=".031" stop-color="#98C7FF"></stop><stop id="stop3320-1" offset=".469" stop-color="#1065E4"></stop><stop id="stop3322-7" offset="1" stop-color="#044AB1"></stop></radialGradient><radialGradient id="paint2_radial-5" cx="0" cy="0" r="1" gradientTransform="matrix(0 -44.5345 37.387 0 41.297 45.242)" gradientUnits="userSpaceOnUse"><stop id="stop3330-43" stop-color="#ffffff"></stop><stop id="stop3332-18" offset=".339" stop-color="#ffffff"></stop><stop id="stop3334-0" offset="1" stop-color="#ECF4FF"></stop></radialGradient><radialGradient id="paint3_radial-4" cx="0" cy="0" r="1" gradientTransform="matrix(0 -14.6613 14.7339 0 41.422 45.495)" gradientUnits="userSpaceOnUse"><stop id="stop3337-5" offset=".292" stop-color="#ffffff"></stop><stop id="stop3339-8" offset="1" stop-color="#F3F8FF"></stop></radialGradient><linearGradient id="paint1_linear" x1="21.536" x2="41.339" y1="5.244" y2="28.982" gradientUnits="userSpaceOnUse"><stop id="stop3325" offset=".031" stop-color="#C1DEFF" stop-opacity=".12"></stop><stop id="stop3327" offset=".891" stop-color="#8DBBFF"></stop></linearGradient><style id="style1182" type="text/css">.fil4{fill:#fefefe}.fil3{fill:#00ae42}.fil5{fill:red}.fil0{fill:#00ae42}.fil0,.fil1,.fil2{fill-rule:nonzero}.fil1{fill:red}.fil2{fill:#fff}</style></defs><path id="path8428" d="M41.733 160.134v-59.2H21.999L96 31.865l74 69.067h-19.733v59.201H110.8v-44.4H81.2v44.4z" style="fill:none;fill-opacity:1;stroke:#000000;stroke-width:12;stroke-linecap:round;stroke-linejoin:round;stroke-miterlimit:5;stroke-dasharray:none;stroke-opacity:1"></path></g></svg>
+        </span>
+
+        <span>Home</span>
     </div>
 
-    <div class="logout-btn">
-      <a href="/">Logout</a>
+    <div class="menu-item" onclick="showSection('personal', this)">
+
+        <span class="icon">
+            <!-- INSERT PERSONAL INFO SVG HERE -->
+             <svg viewBox="0 0 24 24" version="1.1" xmlns="http://www.w3.org/2000/svg" xmlns:xlink="http://www.w3.org/1999/xlink" fill="#000000"><g id="SVGRepo_bgCarrier" stroke-width="0"></g><g id="SVGRepo_tracerCarrier" stroke-linecap="round" stroke-linejoin="round"></g><g id="SVGRepo_iconCarrier"> <!-- Uploaded to: SVG Repo, www.svgrepo.com, Generator: SVG Repo Mixer Tools --> <title>ic_fluent_contact_card_group_24_regular</title> <desc>Created with Sketch.</desc> <g id="🔍-Product-Icons" stroke="none" stroke-width="1" fill="none" fill-rule="evenodd"> <g id="ic_fluent_contact_card_group_24_regular" fill="#212121" fill-rule="nonzero"> <path d="M18.75,4 C20.5449254,4 22,5.45507456 22,7.25 L22,16.754591 C22,18.5495164 20.5449254,20.004591 18.75,20.004591 L5.25,20.004591 C3.45507456,20.004591 2,18.5495164 2,16.754591 L2,7.25 C2,5.51696854 3.35645477,4.10075407 5.06557609,4.00514479 L5.25,4 L18.75,4 Z M18.75,5.5 L5.25,5.5 L5.10647279,5.5058012 C4.20711027,5.57880766 3.5,6.3318266 3.5,7.25 L3.5,16.754591 C3.5,17.7210893 4.28350169,18.504591 5.25,18.504591 L18.75,18.504591 C19.7164983,18.504591 20.5,17.7210893 20.5,16.754591 L20.5,7.25 C20.5,6.28350169 19.7164983,5.5 18.75,5.5 Z M9.25257038,12.5 C9.66678394,12.5 10.0025704,12.8357864 10.0025704,13.25 L10.0025704,13.8321918 C10.0025704,15.1041956 9.0341,15.75 7.50128519,15.75 C5.96840664,15.75 5,15.1036013 5,13.8310402 L5,13.25 C5,12.8357864 5.33578644,12.5 5.75,12.5 L9.25257038,12.5 Z M10.8334902,12.4985863 L12.25,12.5 C12.6642136,12.5 13,12.8357864 13,13.25 L13,13.582681 C13,14.5462268 12.2350063,15 11.125,15 C11.0088628,15 10.8965027,14.9950281 10.7884008,14.9850208 C10.9003752,14.7160989 10.9702591,14.4160784 10.9937337,14.0856775 L11.0025704,13.8321918 L11.0025704,13.25 C11.0025704,12.9810441 10.9418968,12.7262593 10.8334902,12.4985863 Z M15.2496688,12.5 L18.25,12.5 C18.6642136,12.5 19,12.8357864 19,13.25 C19,13.6296958 18.7178461,13.943491 18.3517706,13.9931534 L18.25,14 L15.2496688,14 C14.8354552,14 14.4996688,13.6642136 14.4996688,13.25 C14.4996688,12.8703042 14.7818227,12.556509 15.1478982,12.5068466 L15.2496688,12.5 L18.25,12.5 L15.2496688,12.5 Z M7.50071279,8.5 C8.32953357,8.5 9.00142557,9.171892 9.00142557,10.0007128 C9.00142557,10.8295336 8.32953357,11.5014256 7.50071279,11.5014256 C6.671892,11.5014256 6,10.8295336 6,10.0007128 C6,9.171892 6.671892,8.5 7.50071279,8.5 Z M11.3699891,9.00225167 C12.0591015,9.00225167 12.6177374,9.56088763 12.6177374,10.25 C12.6177374,10.9391124 12.0591015,11.4977483 11.3699891,11.4977483 C10.6808767,11.4977483 10.1222408,10.9391124 10.1222408,10.25 C10.1222408,9.56088763 10.6808767,9.00225167 11.3699891,9.00225167 Z M15.2496688,9.5 L18.25,9.5 C18.6642136,9.5 19,9.83578644 19,10.25 C19,10.6296958 18.7178461,10.943491 18.3517706,10.9931534 L18.25,11 L15.2496688,11 C14.8354552,11 14.4996688,10.6642136 14.4996688,10.25 C14.4996688,9.87030423 14.7818227,9.55650904 15.1478982,9.50684662 L15.2496688,9.5 L18.25,9.5 L15.2496688,9.5 Z" id="🎨-Color"> </path> </g> </g> </g></svg>
+        </span>
+
+        <span>Personal Info</span>
+
     </div>
-  </main>
+
+    <div class="menu-item" onclick="showSection('history', this)">
+
+        <span class="icon">
+            <!-- INSERT HISTORY SVG HERE -->
+             <svg viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg"><g id="SVGRepo_bgCarrier" stroke-width="0"></g><g id="SVGRepo_tracerCarrier" stroke-linecap="round" stroke-linejoin="round"></g><g id="SVGRepo_iconCarrier"> <path d="M3 5.67541V3C3 2.44772 2.55228 2 2 2C1.44772 2 1 2.44772 1 3V7C1 8.10457 1.89543 9 3 9H7C7.55229 9 8 8.55229 8 8C8 7.44772 7.55229 7 7 7H4.52186C4.54218 6.97505 4.56157 6.94914 4.57995 6.92229C5.621 5.40094 7.11009 4.22911 8.85191 3.57803C10.9074 2.80968 13.173 2.8196 15.2217 3.6059C17.2704 4.3922 18.9608 5.90061 19.9745 7.8469C20.9881 9.79319 21.2549 12.043 20.7247 14.1724C20.1945 16.3018 18.9039 18.1638 17.0959 19.4075C15.288 20.6513 13.0876 21.1909 10.9094 20.9247C8.73119 20.6586 6.72551 19.605 5.27028 17.9625C4.03713 16.5706 3.27139 14.8374 3.06527 13.0055C3.00352 12.4566 2.55674 12.0079 2.00446 12.0084C1.45217 12.0088 0.995668 12.4579 1.04626 13.0078C1.25994 15.3309 2.2082 17.5356 3.76666 19.2946C5.54703 21.3041 8.00084 22.5931 10.6657 22.9188C13.3306 23.2444 16.0226 22.5842 18.2345 21.0626C20.4464 19.541 22.0254 17.263 22.6741 14.6578C23.3228 12.0526 22.9963 9.30013 21.7562 6.91897C20.5161 4.53782 18.448 2.69239 15.9415 1.73041C13.4351 0.768419 10.6633 0.756291 8.14853 1.69631C6.06062 2.47676 4.26953 3.86881 3 5.67541Z" fill="#0F0F0F"></path> <path d="M12 5C11.4477 5 11 5.44771 11 6V12.4667C11 12.4667 11 12.7274 11.1267 12.9235C11.2115 13.0898 11.3437 13.2344 11.5174 13.3346L16.1372 16.0019C16.6155 16.278 17.2271 16.1141 17.5032 15.6358C17.7793 15.1575 17.6155 14.546 17.1372 14.2698L13 11.8812V6C13 5.44772 12.5523 5 12 5Z" fill="#0F0F0F"></path> </g></svg>
+             
+        </span>
+
+        <span>Alert History</span>
+
+    </div>
+
+    <a href="/logout" class="menu-item logout">
+
+        <span class="icon">
+            <!-- INSERT LOGOUT SVG HERE -->
+             <svg viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg"><g id="SVGRepo_bgCarrier" stroke-width="0"></g><g id="SVGRepo_tracerCarrier" stroke-linecap="round" stroke-linejoin="round"></g><g id="SVGRepo_iconCarrier"> <path d="M15 12L2 12M2 12L5.5 9M2 12L5.5 15" stroke="#1C274C" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"></path> <path d="M9.00195 7C9.01406 4.82497 9.11051 3.64706 9.87889 2.87868C10.7576 2 12.1718 2 15.0002 2L16.0002 2C18.8286 2 20.2429 2 21.1215 2.87868C22.0002 3.75736 22.0002 5.17157 22.0002 8L22.0002 16C22.0002 18.8284 22.0002 20.2426 21.1215 21.1213C20.3531 21.8897 19.1752 21.9862 17 21.9983M9.00195 17C9.01406 19.175 9.11051 20.3529 9.87889 21.1213C10.5202 21.7626 11.4467 21.9359 13 21.9827" stroke="#1C274C" stroke-width="1.5" stroke-linecap="round"></path> </g></svg>
+        </span>
+
+        <span>Logout</span>
+
+    </a>
+
+</div>
+
+<!-- RIGHT CONTENT -->
+<div class="content">
+
+    <!-- HOME -->
+    <div id="home" class="section active">
+
+      <div class="center-box">
+        <div class="profile-circle">
+
+          {{ fname[0]|upper }}
+
+        </div>
+
+        <h2>Welcome {{ fname }}</h2>
+        <p>This is your SilentGuardian account dashboard.</p>
+
+      </div>
+
+        
+    </div>
+
+    <!-- PERSONAL INFO -->
+    <div id="personal" class="section">
+
+      <div class="center-box">
+        <h2>Personal Info</h2>
+
+        <!-- name card -->
+
+        <div class="card info-card">
+
+          <div class="info-icon">
+
+          <!-- INSERT NAME SVG HERE -->
+           <svg viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg"><g id="SVGRepo_bgCarrier" stroke-width="0"></g><g id="SVGRepo_tracerCarrier" stroke-linecap="round" stroke-linejoin="round"></g><g id="SVGRepo_iconCarrier"> <circle cx="12" cy="6" r="4" stroke="#1C274C" stroke-width="1.5"></circle> <path d="M20 17.5C20 19.9853 20 22 12 22C4 22 4 19.9853 4 17.5C4 15.0147 7.58172 13 12 13C16.4183 13 20 15.0147 20 17.5Z" stroke="#1C274C" stroke-width="1.5"></path> </g></svg>
+
+          </div>
+
+          <div>
+
+          <p class="label">Name</p>
+          <p class="value">{{ fname }} {{ lname }}</p>
+
+          </div>
+
+        </div>
+        <!-- email card -->
+        <div class="card info-card">
+
+          <div class="info-icon">
+
+          <!-- INSERT EMAIL SVG HERE -->
+           <svg viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg"><g id="SVGRepo_bgCarrier" stroke-width="0"></g><g id="SVGRepo_tracerCarrier" stroke-linecap="round" stroke-linejoin="round"></g><g id="SVGRepo_iconCarrier"> <path fill-rule="evenodd" clip-rule="evenodd" d="M3.75 5.25L3 6V18L3.75 18.75H20.25L21 18V6L20.25 5.25H3.75ZM4.5 7.6955V17.25H19.5V7.69525L11.9999 14.5136L4.5 7.6955ZM18.3099 6.75H5.68986L11.9999 12.4864L18.3099 6.75Z" fill="#080341"></path> </g></svg>
+
+          </div>
+
+          <div>
+
+          <p class="label">Email</p>
+          <p class="value">{{ email }}</p>
+
+          </div>
+
+        </div>
+
+      </div>
+
+        
+
+    </div>
+
+    <!-- ALERT HISTORY -->
+    <div id="history" class="section">
+      <div class="center-box">
+          <h2>Alert History</h2>
+          
+
+          <h3>This Month</h3>
+
+          <table>
+          <tr>
+          <th>Time</th>
+          <th>Location</th>
+          <th>Status</th>
+          </tr>
+
+          {% for fall in falls %}
+          <tr>
+          <td>{{ fall[0] }}</td>
+          <td>{{ fall[1] }}</td>
+          <td>{{ fall[2] }}</td>
+          </tr>
+          {% endfor %}
+
+          </table>
+      </div>
+
+      </div>
+
+
+      
+
+</div>
+
+</div>
+
+
+<script>
+
+function showSection(id, element){
+
+    // hide all sections
+    document.querySelectorAll(".section").forEach(s=>{
+        s.classList.remove("active")
+    })
+
+    // remove active menu
+    document.querySelectorAll(".menu-item").forEach(m=>{
+        m.classList.remove("active")
+    })
+
+    // show section
+    document.getElementById(id).classList.add("active")
+
+    // highlight menu item
+    element.classList.add("active")
+}
+
+</script>
+
 </body>
 </html>

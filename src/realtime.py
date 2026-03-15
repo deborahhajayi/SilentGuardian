@@ -11,7 +11,9 @@ import argparse
 
 SEQ_LEN = 8
 THRESH = 0.5
+CONFIRMATION_NEEDED = 3
 
+fall_counter = 0
 # --------------------
 # LOAD MODELS
 # --------------------
@@ -32,36 +34,50 @@ def angle(a, b):
     return np.arctan2(b[1] - a[1], b[0] - a[0])
 
 def geom_from_kp(kp):
-    NOSE = kp[0][:2]
-    L_SHO, R_SHO = kp[5][:2], kp[6][:2]
-    L_HIP, R_HIP = kp[11][:2], kp[12][:2]
+    LOW_CONF = 0.15
+    l_hip_conf, r_hip_conf = kp[11][2], kp[12][2]
 
-    shoulders = (L_SHO + R_SHO) / 2
-    hips = (L_HIP + R_HIP) / 2
+    if l_hip_conf < LOW_CONF or r_hip_conf < LOW_CONF:
+        return np.zeros(13, dtype=np.float32)
 
-    body_height = np.linalg.norm(NOSE - hips)
-    if body_height > 0:
-        height_buffer.append(body_height)
+    try:
+        NOSE = kp[0][:2]
+        L_SHO, R_SHO = kp[5][:2], kp[6][:2]
+        L_HIP, R_HIP = kp[11][:2], kp[12][:2]
 
-    median_h = np.median(height_buffer) if height_buffer else 1.0
-    rel_h = body_height / (median_h + 1e-6)
+        shos_mid = (L_SHO + R_SHO) / 2
+        hips_mid = (L_HIP + R_HIP) / 2
 
-    xs, ys = kp[:, 0], kp[:, 1]
-    aspect = (ys.max() - ys.min() + 1e-6) / (xs.max() - xs.min() + 1e-6)
+        body_h = np.linalg.norm(NOSE - hips_mid)
+        
+        if body_h > 0:
+            height_buffer.append(body_h)
 
-    return np.array([
-        angle(L_SHO, R_SHO),
-        angle(L_HIP, R_HIP),
-        angle(shoulders, hips),
-        body_height,
-        aspect,
-        shoulders[0], shoulders[1],
-        hips[0], hips[1],
-        NOSE[0], NOSE[1],
-        np.linalg.norm(shoulders - hips),
-        rel_h
-    ], dtype=np.float32)
+        med_h = np.median(height_buffer) if height_buffer else 1.0
+        rel_h = body_h / (med_h + 1e-6)
 
+        vis = kp[kp[:, 2] > LOW_CONF]
+        if len(vis) > 2:
+            xs, ys = vis[:, 0], vis[:, 1]
+            aspect = (ys.max() - ys.min() + 1e-6) / (xs.max() - xs.min() + 1e-6)
+        else:
+            aspect = 0.5
+
+        return np.array([
+            angle(L_SHO, R_SHO),
+            angle(L_HIP, R_HIP),
+            angle(shos_mid, hips_mid),
+            body_h,
+            aspect,
+            shos_mid[0], shos_mid[1],
+            hips_mid[0], hips_mid[1],
+            NOSE[0], NOSE[1],
+            np.linalg.norm(shos_mid - hips_mid),
+            rel_h
+        ], dtype=np.float32)
+
+    except:
+        return np.zeros(13, dtype=np.float32)
 # --------------------
 # SKELETON DRAWING
 # --------------------
@@ -128,63 +144,52 @@ while True:
         break
 
     h, w, _ = frame.shape
-
-    # Resize while keeping aspect ratio, pad to 192x192
-    in_size = 192
-    scale = in_size / max(h, w)
+    scale = 192 / max(h, w)
     nh, nw = int(h*scale), int(w*scale)
-
     img = cv2.resize(frame, (nw, nh))
-    pad_top = (in_size - nh)//2
-    pad_left = (in_size - nw)//2
-    img_padded = np.zeros((in_size, in_size, 3), dtype=np.float32)
-    img_padded[pad_top:pad_top+nh, pad_left:pad_left+nw] = img
-    img_padded = cv2.cvtColor(img_padded, cv2.COLOR_BGR2RGB)[None,...]
+    padded = np.zeros((192, 192, 3), dtype=np.float32)
+    padded[(192-nh)//2:(192-nh)//2+nh, (192-nw)//2:(192-nw)//2+nw] = img
+    padded_rgb = cv2.cvtColor(padded, cv2.COLOR_BGR2RGB)[None,...]
 
-    # Run MoveNet
-    movenet.set_tensor(mn_in[0]["index"], img_padded)
+    movenet.set_tensor(mn_in[0]["index"], padded_rgb)
     movenet.invoke()
-    kp = movenet.get_tensor(mn_out[0]["index"])[0,0]  # 17x3
+    kp = movenet.get_tensor(mn_out[0]["index"])[0,0]
 
-    # Append geom features for LSTM
-    buf.append(geom_from_kp(kp))
+    # UPDATED: Gated Buffer Append - Only add to memory if hips are visible
+    feat = geom_from_kp(kp)
+    if np.any(feat != 0):
+        buf.append(feat)
 
-    # Draw skeleton properly
-    draw_skeleton(frame, kp, pad_top, pad_left, scale)
+    label, color = "STABLE", (0, 255, 0)
 
-    # LSTM prediction
-    label = "WAIT"
-    color = (0,255,255)
+    # UPDATED: Temporal Smoothing Logic
     if len(buf) == SEQ_LEN:
-        X = np.array(buf)[None,...]
-        p = float(model.predict(X, verbose=0)[0][0])
-        label = "FALL" if p > THRESH else "NO_FALL"
-        color = (0,0,255) if label=="FALL" else (0,255,0)
-
-    if label == "FALL" and (time.time() - last_sent) > COOLDOWN_SEC:
-        last_sent = time.time()
-
-        ok, jpg = cv2.imencode(".jpg", frame)
-        if ok:
-            files = {"image": ("fall.jpg", jpg.tobytes(), "image/jpeg")}
-            data = {"email": EMAIL, "location": LOCATION}
-
-            try:
-                r = requests.post(API_URL, data=data, files=files, timeout=5)
-                print("POST /api/report_fall:", r.status_code, r.text)
-            except Exception as e:
-                print("POST failed:", e)
+        p = float(model.predict(np.array(buf)[None,...], verbose=0)[0][0])
+        
+        if p > THRESH:
+            fall_counter += 1
         else:
-            print("Could not encode image")
+            fall_counter = max(0, fall_counter - 1)
 
+        if fall_counter >= CONFIRMATION_NEEDED:
+            label, color = "FALL CONFIRMED", (0, 0, 255)
+            # API Trigger
+            if (time.time() - last_sent) > COOLDOWN_SEC:
+                last_sent = time.time()
+                ok, jpg = cv2.imencode(".jpg", frame)
+                if ok:
+                    files = {"image": ("fall.jpg", jpg.tobytes(), "image/jpeg")}
+                    data = {"email": EMAIL, "location": LOCATION}
+                    try:
+                        r = requests.post(API_URL, data=data, files=files, timeout=5)
+                        print("API Alert Sent:", r.status_code)
+                    except Exception as e: print("API Failed:", e)
+        elif fall_counter > 0:
+            label, color = "ANALYZING (" + str(fall_counter) + ")", (0, 165, 255)
 
-
-    cv2.putText(frame, label, (20,40),
-                cv2.FONT_HERSHEY_SIMPLEX, 1.2, color, 3)
-
+    draw_skeleton(frame, kp, (192-nh)//2, (192-nw)//2, scale)
+    cv2.putText(frame, label, (20,40), cv2.FONT_HERSHEY_SIMPLEX, 1.2, color, 3)
     cv2.imshow("MoveNet Fall Detection", frame)
-    if cv2.waitKey(1) & 0xFF in [27, ord('q')]:
-        break
-
+    if cv2.waitKey(1) & 0xFF in [27, ord('q')]: break
 cap.release()
 cv2.destroyAllWindows()

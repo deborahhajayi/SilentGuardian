@@ -18,7 +18,7 @@ CORS(app)
 bcrypt = Bcrypt(app)
 
 # session expiry after certain timeline
-app.permanent_session_lifetime = timedelta(minutes=1)
+app.permanent_session_lifetime = timedelta(minutes=40)
 
 @app.route('/')
 def login():
@@ -320,12 +320,35 @@ def logout():
 @app.route('/profile')
 @login_required
 def profile():
-    fname = request.args.get('fname')
-    lname = request.args.get('lname')
-    email = request.args.get('email')
-    return render_template('profile.html', fname=fname, lname=lname, email=email)
+    fname = session.get('fname')
+    lname = session.get('lname')
+    email = session.get('email')
 
-ts = datetime.now().strftime('%Y-%m-%d %H:%M:%S')
+    conn = sqlite3.connect("LoginData.db")
+    cur = conn.cursor()
+
+    falls = cur.execute(
+    """
+    SELECT 
+    timestamp,
+    location,
+    status,
+    strftime('%Y-%m', timestamp) as month,
+    strftime('%W', timestamp) as week
+    FROM FALL_EVENTS
+    WHERE email=?
+    ORDER BY timestamp DESC
+    """,
+    (email,)
+    ).fetchall()
+
+    conn.close()
+
+    return render_template("profile.html",
+                           fname=fname,
+                           lname=lname,
+                           email=email,
+                           falls=falls)
 
 
 
@@ -399,4 +422,4 @@ def falls_latest():
 
 
 if __name__ == '__main__':
-    app.run(debug=True)
+    app.run(host='0.0.0.0', port=5000, debug=True)

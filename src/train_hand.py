@@ -23,10 +23,17 @@ VAL_FILE = "data/splits_hand/val.csv"
 MODEL_OUT = "models/hand_gesture_mlp.keras"
 SCALER_OUT = "models/hand_scaler.pkl"
 
+# NEW OUTPUT LOCATION
+OUTPUT_DIR = "hand_outputs"
+os.makedirs(OUTPUT_DIR, exist_ok=True)
+
 os.makedirs("models", exist_ok=True)
 
 EPOCHS = 30
 BATCH_SIZE = 32
+
+# Class names based on your encoding
+CLASS_NAMES = ["Like (Thumbs Up)", "Palm", "Neutral"]
 
 
 # =============================
@@ -185,7 +192,7 @@ y_pred_prob = model.predict(X_val)
 y_pred = np.argmax(y_pred_prob, axis=1)
 
 print("\nClassification Report:")
-print(classification_report(y_val, y_pred))
+print(classification_report(y_val, y_pred, target_names=CLASS_NAMES))
 
 cm = confusion_matrix(y_val, y_pred)
 
@@ -193,23 +200,54 @@ plt.figure(figsize=(6,5))
 plt.imshow(cm, interpolation='nearest')
 plt.title("Confusion Matrix")
 plt.colorbar()
-plt.xlabel("Predicted")
-plt.ylabel("True")
-plt.savefig("models/confusion_matrix.png")
+
+tick_marks = np.arange(len(CLASS_NAMES))
+plt.xticks(tick_marks, CLASS_NAMES, rotation=45)
+plt.yticks(tick_marks, CLASS_NAMES)
+
+plt.xlabel("Predicted Label")
+plt.ylabel("True Label")
+
+# write numbers inside boxes
+for i in range(len(CLASS_NAMES)):
+    for j in range(len(CLASS_NAMES)):
+        plt.text(j, i, cm[i, j], ha="center", va="center")
+
+plt.tight_layout()
+
+plt.savefig(f"{OUTPUT_DIR}/confusion_matrix.png")
 plt.close()
+
 
 plt.figure(figsize=(7,5))
 plt.plot(history.history["accuracy"], label="Train Accuracy")
 plt.plot(history.history["val_accuracy"], label="Val Accuracy")
+
+plt.title("Training vs Validation Accuracy")
+plt.xlabel("Epoch")
+plt.ylabel("Accuracy")
+
+plt.grid(True)
 plt.legend()
-plt.savefig("models/accuracy_graph.png")
+
+plt.savefig(f"{OUTPUT_DIR}/accuracy_graph.png")
 plt.close()
+
 
 plt.figure(figsize=(7,5))
 plt.plot(history.history["loss"], label="Train Loss")
 plt.plot(history.history["val_loss"], label="Val Loss")
+
+plt.title("Training vs Validation Loss")
+plt.xlabel("Epoch")
+plt.ylabel("Loss")
+
+plt.grid(True)
 plt.legend()
-plt.savefig("models/loss_graph.png")
+
+plt.savefig(f"{OUTPUT_DIR}/loss_graph.png")
 plt.close()
 
+
 print("\n✅ Training complete")
+print("Outputs saved to:", OUTPUT_DIR)

@@ -13,25 +13,24 @@ header {
     box-shadow: 0 2px 4px rgba(0,0,0,0.1);
 }
 
-/* container for svg profile icon */
-.profile-photo {
-  width: 40px;            /* desired final size */
-  height: 40px;
-  display: inline-flex;
-  align-items: center;
-  justify-content: center;
-  overflow: hidden;
-  border-radius: 50%;
-  background: transparent; /* optional circle bg */
+.profile-photo{
+  width:40px;
+  height:40px;
+  border-radius:50%;
+  background:#8496be;   /* SilentGuardian blue */
+  color:white;
+
+  display:flex;
+  align-items:center;
+  justify-content:center;
+
+  font-weight:700;
+  font-size:16px;
 }
 
-/* make the inline svg scale and inherit color */
-.profile-photo .profile-svg {
-  width: 100%;
-  height: 100%;
-  display: block;
-  /* override fill in the SVG if needed */
-  fill: #ffffff !important;   /* white icon on teal header */
+.profile-photo:hover{
+  transform:scale(1.05);
+  transition:0.2s;
 }
 
 /* keep username from getting cut off */
@@ -58,6 +57,9 @@ header {
   
 }
 
+h1{
+  color:#293a6e;
+}
 
 main {
     padding: 30px 20px;
@@ -72,7 +74,7 @@ main {
 
 .notifications h2 {
     margin-top: 0;
-    color: #333;
+    color: #293a6e;
 }
 
 .notifications ul {
@@ -90,14 +92,14 @@ footer {
     text-align: center;
     padding: 20px;
     color: #888;
-    font-size: 14px;
+    font-size: 14t4px;
 }
 
 
 
 /* Logo image in header */
 .logo-img {
-    height: 100px;        /* adjust as needed */
+    height: 55px;        /* adjust as needed */
     width: auto;         /* keeps aspect ratio */
     display: block;
 }

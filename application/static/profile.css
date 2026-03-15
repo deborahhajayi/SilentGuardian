@@ -1,121 +1,255 @@
-/* layout + background */
-body {
-  font-family: Arial, sans-serif;
-  background-color: white;
-  margin: 0;
-  display: flex;
-  flex-direction: column;
-  align-items: center;
+body{
+font-family: Arial;
+margin:0;
+background:#f1f3f4;
 }
 
-/* header container centered with room for left icon */
-header {
-  position: relative;
-  width: 90%;
-  max-width: 700px;
-  margin-top: 30px;
-  display: flex;
-  align-items: center;
-  justify-content: center; /* centers the H1 */
+/* TOP BAR */
+
+.topbar{
+height:65px;
+background:white;
+display:flex;
+align-items:center;
+justify-content:space-between;
+padding:0 25px;
+border-bottom:2px solid #ffffff;
+box-shadow: 0 2px 4px rgba(0, 0, 0, 0.1);
+padding-top:10px;
 }
 
-/* Title centered in header */
-header h1 {
-  margin: 0;
-  font-size: 1.6rem;
-  color: #333;
-  text-align: center;
-  flex: 1;
+.top-right{
+display:flex;
+align-items:center;
 }
 
-/* home link placed on the left but inside the centered header */
-.home-link {
-  position: absolute;
-  left: 0;
-  top: 50%;
-  transform: translateY(-50%);
-  display: inline-flex;
-  align-items: center;
-  padding-left: 6px;
-  text-decoration: none;
+.dashboard-btn{
+width:36px;
+height:36px;
+display:flex;
+align-items:center;
+justify-content:center;
+border-radius:50%;
+background:#f1f3f4;
 }
 
-/* SVG wrapper sizing (replaces IMG) */
-.home-icon {
-  width: 36px;
-  height: 36px;
-  display: inline-block;
-  border-radius: 6px;
-  overflow: hidden;
-  background: transparent; /* change if you want a colored pill behind icon */
+.dashboard-btn svg{
+width:20px;
+height:20px;
 }
 
-/* ensure the inline SVG scales to the container */
-.home-svg {
-  width: 100%;
-  height: 100%;
-  display: block;
-  fill: #5c4578; /* change this hex to whatever color you want for the icon */
-}
-
-/* main card */
-main {
-  background-color: white;
-  padding: 30px;
-  border-radius: 15px;
-  margin-top: 20px;
-  box-shadow: 0 5px 15px rgba(0,0,0,0.1);
-  width: 90%;
-  max-width: 700px;
-  margin-left: auto;
-  margin-right: auto;
-}
-
-/* profile info styles */
-.profile-info p {
-  font-size: 1.1rem;
-  margin: 12px 0;
-  color: #444;
-  padding-left: 25%;
-  
+.logo-img{
+height:55px;
 }
 
 
+/* LAYOUT */
 
-/* logout button */
-.logout-btn {
-  margin-top: 24px;
-  text-align: center;
-
+.container{
+display:flex;
+height:calc(100vh - 65px);
 }
 
-.logout-btn a {
-  display: inline-block;
-  padding: 10px 24px;
-  background-color: black;
-  color: white;
-  text-decoration: none;
-  font-weight: bold;
-  border-radius: 6px;
+/* SIDEBAR */
+
+.sidebar{
+width:250px;
+background:white;
+border-right:1px solid #ddd;
+padding-top:20px;
 }
 
-.logout-btn {
-  border: none;
-  padding: 10px 14px;
-  border-radius: 6px;
-  cursor: pointer;
-  font-size: 0.95rem;
-  transition: background-color 0.3s ease;
+/* MENU ITEM */
+
+.menu-item{
+display:flex;
+align-items:center;
+gap:15px;
+padding:12px 20px;
+margin:6px 12px;
+cursor:pointer;
+font-size:15px;
+border-radius:12px;
+transition:all 0.2s ease;
 }
 
-.logout-btn a:hover {
-  background-color: rgb(87, 87, 87);
+/* ICON AREA */
+
+.icon{
+width:34px;
+height:34px;
+display:flex;
+align-items:center;
+justify-content:center;
+border-radius:50%;
+flex-shrink:0;
 }
 
-/* small screens */
-@media (max-width: 480px) {
-  .home-icon { width: 32px; height: 32px; }
-  header { width: 95%; }
-  main { padding: 20px; }
+.icon svg{
+width:18px;
+height:18px;
+}
+/* HOVER EFFECT */
+
+.menu-item:hover{
+background:rgba(0,0,0,0.07);
+border-radius:12px;
 }
 
+/* ACTIVE MENU ITEM */
+
+.menu-item.active{
+background:white;
+font-weight:bold;
+box-shadow:0 2px 6px rgba(0,0,0,0.08);
+}
+
+
+.menu-item:nth-child(1) .icon{
+background:#e8f0fe;
+color:#1a73e8;
+}
+
+.menu-item:nth-child(2) .icon{
+background:#e6f7ef;
+color:#0f9d58;
+}
+
+.menu-item:nth-child(3) .icon{
+background:#fff4e5;
+color:#f29900;
+}
+
+.menu-item:nth-child(4) .icon{
+background:#eea4a4;
+color:#f59b9b;
+}
+
+.logout .icon{
+background:#ffe5e5;
+color:#d60000;
+}
+
+/* LOGOUT BUTTON */
+
+.logout{
+background:#ffe5e5;
+color:#d60000;
+font-weight:bold;
+text-decoration: none;
+}
+
+.logout:hover{
+background:#ffcccc;
+}
+
+/* REMOVE LINK STYLE */
+
+.logout a{
+text-decoration:none;
+color:#d60000;
+width:100%;
+}
+
+/* CONTENT */
+.content{
+flex:1;
+display:flex;
+justify-content:center;   /* horizontal center */
+align-items:flex-start;   /* start at top instead of middle */
+padding-top:40px;
+}
+/* SECTIONS */
+
+.section{
+display:none;
+}
+
+.section.active{
+display:block;
+}
+
+/* CARDS */
+
+.card{
+background:white;
+padding:20px;
+margin-top:15px;
+border-radius:10px;
+border:1px solid #ddd;
+width:350px;
+}
+
+/* ALERT TABLE */
+
+table{
+margin-top:20px;
+border-collapse:collapse;
+width:600px;
+background:white;
+}
+
+th,td{
+padding:12px;
+border-bottom:1px solid #ddd;
+text-align:left;
+}
+
+th{
+background:#f5f5f5;
+}
+
+.center-box{
+text-align:center;
+}
+
+.profile-circle{
+width:8rem;
+height:8rem;
+background:#8496be;
+color:white;
+display:flex;
+align-items:center;
+justify-content:center;
+
+font-size:40px;
+font-weight:bold;
+
+border-radius:50%;
+margin-bottom:15px;
+margin-left: 35%;
+}
+
+
+
+.info-card{
+display:flex;
+align-items:center;
+gap:15px;
+}
+
+.info-icon{
+width:40px;
+height:40px;
+border-radius:50%;
+background:#f1f3f4;
+display:flex;
+align-items:center;
+justify-content:center;
+}
+
+.info-icon svg{
+width:20px;
+height:20px;
+}
+
+.label{
+font-weight:bold;
+margin:0;
+text-align: left;
+}
+
+.value{
+margin:2px 0 0 0;
+color:#555;
+}

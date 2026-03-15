@@ -32,6 +32,9 @@ trash/
 venv/
 yolo_test/
 yolov8n.pt
+hand_outputs/
+export_onnx/
+src/rhand_rpi.py
 application/static/falls/
 # Ignore Python cache files
 __pycache__/

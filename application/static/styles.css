@@ -42,7 +42,7 @@ main {
 h1.form-title,
 h2.form-sub {
   text-align: center;
-  color: #2c2a33;
+  color: #485886;
   margin-bottom: 14px;
 }
 
@@ -51,6 +51,9 @@ h2.form-sub {
   font-weight: 600;
 }
 
+h2{
+  color: #485886;
+}
 /* ---------- Split layout (login / signup) ---------- */
 .split-container {
   min-height: 100vh;
@@ -83,20 +86,33 @@ h2.form-sub {
   background-repeat: no-repeat;  /* avoids tiling */
   border-top-left-radius: 12px;
   border-bottom-left-radius: 12px;
-  filter: grayscale(100%) contrast(130%);
+  overflow: hidden;
   
 
 
 }
 
+.left-pane::before {
+  content: "";
+  position: absolute;
+  inset: 0;
+
+  background:
+    linear-gradient(rgba(233, 242, 253, 0.45), rgba(104, 134, 218, 0.45)),
+    url('/static/images/cp1.jpg') center/cover no-repeat;
+
+  z-index: 0;
+}
 
 .left-content {
-  background: rgba(255,255,255,0.06);
+  background: transparent;
   padding: 16px;
   border-radius: 12px;
   text-align: center;
   width: 100%;
   max-width: 450px;
+  position: relative;
+  z-index: 1;
 }
 .pane-logo {
   width: 100%;
@@ -134,12 +150,12 @@ h2.form-sub {
 
 .pane-heading {
   font-size: 1.6rem;
-  color: #2f1c4a;
+  color: #293a6e;
   margin-bottom: 8px;
   font-weight: 700;
 }
 .pane-sub {
-  color: rgba(20,20,20,0.65);
+  color: rgba(0, 81, 148, 0.65);
   font-size: 0.98rem;
 }
 
@@ -151,7 +167,7 @@ h2.form-sub {
   justify-content: center;
   padding: 48px;
   /*background: #ffffff;*/
-  background-color: #ffffff;
+  background-color: #fdfdfd;
 }
 .form-wrap {
   width: 100%;
@@ -240,7 +256,7 @@ button {
   padding: 12px 14px;
   border-radius: 10px;
   border: none;
-  background: #201426;
+  background: #1c567e;
   color: #fff;
   font-weight: 700;
   font-size: 15px;
@@ -331,12 +347,12 @@ button[type="submit"]:hover {
 .forgot-box h1 {
   font-family: "Orbitron", sans-serif;
   font-size: 1.8rem;
-  color: #333;
+  color: #485886;
   margin-bottom: 10px;
 }
 
 .forgot-subtitle {
-  color: #666;
+  color: rgba(0, 81, 148, 0.65);
   font-size: 0.95rem;
   margin-bottom: 20px;
 }
@@ -356,7 +372,7 @@ button[type="submit"]:hover {
 }
 
 .forgot-form button {
-  background-color: #434343;
+  background-color: #1c567e;
   color: #fff;
   border: none;
   padding: 10px 14px;
