@@ -1,4 +1,5 @@
 # SilentGuardian
+---
 SilentGurdian is a simple, smart safety system that quietly looks out for the people you care about most. Using AI, it can recognize when someone has fallen or when they make a hand gesture asking for help.
 
 ### Features
@@ -39,3 +40,12 @@ How to Run the Application
 The app will be available at:
 http://localhost:5000
 
+## Running the Gesture Detection System on the Raspberry Pi
+---
+
+## Contributors & Support 
+---
+- Deborah Ajayi
+- Anique Ali
+- Kamsiyochukwu Ekweozor 
+- Jennifer Ogidi-Gbegbaje 
