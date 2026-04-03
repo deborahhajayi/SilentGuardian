@@ -1,10 +1,10 @@
 # SilentGuardian
 
-## About the Project
-
 <p align="left">
     <img src="application/fall_image/fall_image.png" width="500">
 </p>
+
+## About the Project
 
 SilentGurdian is a simple, smart safety system designed to support elderly and vulnerable individuals. It continuously monitors for critical events that could lead to injury or serious complications.
 Using AI, the system can accurately detect falls in real time and recognize specific hand gestures used to signal for help. This dual detection approach enhances reliability and ensures timely responses during emergencies. 
