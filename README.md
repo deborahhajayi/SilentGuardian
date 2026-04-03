@@ -1,6 +1,10 @@
 # SilentGuardian
----
-SilentGurdian is a simple, smart safety system that quietly looks out for the people you care about most. Using AI, it can recognize when someone has fallen or when they make a hand gesture asking for help.
+
+# About the Project
+
+SilentGurdian is a simple, smart safety system designed to support elderly and vulnerable individuals. It continuously monitors for critical events that could lead to injury or serious complications.
+Using AI, the system can accurately detect falls in real time and recognize specific hand gestures used to signal for help. This dual detection approach enhances reliability and ensures timely responses during emergencies. 
+The system is depolyed on a low-cost, efficient device such as the Raspberry Pi 5, making it accessible, and practical for real-world use.
 
 ### Features
 - AI Detection
@@ -25,11 +29,11 @@ SilentGurdian is a simple, smart safety system that quietly looks out for the pe
 
 ### Installation
 1. Clone the Project
-- git clone repo--url
-- cd SilentGuardian
+    - git clone repo--url
+    - cd SilentGuardian
   
 2. Install Dependencies
-- pip install -r requirements.txt
+    - pip install -r requirements.txt
 
 How to Run the Application
 - Run the Backend
@@ -40,12 +44,25 @@ How to Run the Application
 The app will be available at:
 http://localhost:5000
 
-## Running the Gesture Detection System on the Raspberry Pi
----
+# Running the Gesture Detection System on the Raspberry Pi
 
-## Contributors & Support 
----
-- Deborah Ajayi
-- Anique Ali
-- Kamsiyochukwu Ekweozor 
-- Jennifer Ogidi-Gbegbaje 
+1. Run the script app.py
+2. Connect the Raspberry Pi to the mobile PC hotspot
+    - This shows the device name and the ip address
+3. Enable SSH into the PC
+4. Activate the virtual environment 
+    - source gesture-env/bin/activate
+    - cd fall_project
+5. Run the script using this format 
+    - python3 realtime_communication.py --email <"email_address"> --location "name_of_location" --api_base http://<"ip_address">:5000/
+    - To do a live stream use http://<"ip_address">:8000/video_feed
+
+# Contributors & Support 
+
+- Deborah Ajayi (Team Member)
+- Anique Ali (Team Member)
+- Kamsiyochukwu Ekweozor (Team Member)
+- Jennifer Ogidi-Gbegbaje (Team Member)
+- Dr Safaa Bedawi (Supervisor)
+- Dr Rami Sabouni (Co-supervisor)
+- SYSC 4907 (Course)
